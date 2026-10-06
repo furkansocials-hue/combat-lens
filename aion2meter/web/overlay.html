@@ -1,0 +1,76 @@
+<!doctype html>
+<html lang="tr">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Combat Lens</title>
+<link rel="stylesheet" href="common.css">
+<link rel="stylesheet" href="overlay.css">
+</head>
+<body>
+<div class="panel" id="panel">
+  <header class="hdr">
+    <span id="logo" class="pywebview-drag-region"></span>
+    <div class="seg" id="tabs">
+      <button data-tab="me" id="tab-me"></button>
+      <button data-tab="party" id="tab-party"></button>
+    </div>
+    <div class="drag pywebview-drag-region"></div>
+    <div class="tools">
+      <button class="ib" id="b-pause"></button>
+      <button class="ib" id="b-reset"></button>
+      <button class="ib" id="b-analysis"></button>
+      <button class="ib" id="b-timers"></button>
+      <button class="ib" id="b-settings"></button>
+      <button class="ib" id="b-fold"></button>
+      <button class="ib danger" id="b-close"></button>
+    </div>
+  </header>
+
+  <section class="target hidden" id="target">
+    <div class="t-em" id="t-ic"></div>
+    <div class="t-main">
+      <div class="line">
+        <span class="name" id="t-name"></span>
+        <span class="time num" id="t-time"></span>
+        <span class="sp"></span>
+        <span class="hpt num" id="t-hp"></span>
+      </div>
+      <div class="hprow"><div class="hpbar"><i id="t-bar"></i></div><span class="hpp num" id="t-pct"></span></div>
+    </div>
+  </section>
+
+  <div class="notices" id="notices"></div>
+  <div class="notices hidden" id="rnote"></div>
+  <main class="rows" id="rows"></main>
+  <section class="settings hidden" id="settings"></section>
+  <section class="timers hidden" id="timers"></section>
+  <section class="welcome hidden" id="welcome"></section>
+
+  <footer class="ftr">
+    <span class="dot" id="f-dot"></span>
+    <span class="st" id="f-st"></span>
+    <span class="upd hidden" id="f-upd"></span>
+    <span class="nav hidden" id="f-nav">
+      <button class="ib" id="n-prev"></button><span class="num" id="n-pos"></span><button class="ib" id="n-next"></button>
+    </span>
+  </footer>
+  <div class="grip" id="grip"></div>
+</div>
+
+<div class="strip hidden" id="strip">
+  <span id="s-logo"></span>
+  <div class="s-title pywebview-drag-region" id="s-title"><span id="s-name"></span><span class="s-time num" id="s-time"></span></div>
+  <div class="s-hp hidden" id="s-hp"><i id="s-hpbar"></i></div>
+  <span class="s-val num" id="s-val"></span>
+  <button class="ib" id="s-pause"></button>
+  <button class="ib" id="s-open"></button>
+  <button class="ib danger" id="s-close"></button>
+  <div class="grip h" id="s-grip"></div>
+</div>
+
+<script src="common.js"></script>
+<script src="timers.js"></script>
+<script src="overlay.js"></script>
+</body>
+</html>

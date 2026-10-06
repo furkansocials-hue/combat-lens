@@ -1,0 +1,34 @@
+<!doctype html>
+<html lang="tr">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Combat Lens · Analiz</title>
+<link rel="stylesheet" href="common.css">
+<link rel="stylesheet" href="analysis.css">
+</head>
+<body>
+<div class="tb">
+  <span id="logo" class="pywebview-drag-region"></span>
+  <div class="ttl pywebview-drag-region"><span id="tb-name"></span><span id="tb-sub"></span></div>
+  <div class="drag pywebview-drag-region" id="tb-drag"></div>
+  <button class="ib" id="w-min"></button>
+  <button class="ib" id="w-max"></button>
+  <button class="ib danger" id="w-close"></button>
+</div>
+<div class="wrap">
+  <aside class="side">
+    <div class="side-h"><b id="h-title"></b>
+      <div class="seg" id="h-tabs"><button data-f="all" class="on" id="h-all"></button><button data-f="fav" id="h-fav"></button></div>
+    </div>
+    <div class="hist" id="hist"></div>
+  </aside>
+  <section class="main" id="main">
+    <div class="blank" id="blank"></div>
+  </section>
+</div>
+<div class="grip" id="grip"></div>
+<script src="common.js"></script>
+<script src="analysis.js"></script>
+</body>
+</html>

@@ -1,0 +1,12 @@
+__pycache__/
+cache/
+kayitlar/
+meter.log
+ayarlar.json
+kayitlar_console.log
+son_karakter.json
+isim_onbellek.json
+oyuncu_hesaplari.json
+.venv/
+build/
+dist/

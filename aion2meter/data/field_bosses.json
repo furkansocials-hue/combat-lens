@@ -1,0 +1,475 @@
+{
+ "note": "Global Season 1 field bosses. Respawn counts from the kill. Cycles: couga54 AION 2 Guides (checked in game, global runs at half of the Korean notice), last checked 2026-10-04.",
+ "sources": [
+  "https://couga54.github.io/aion2-guides/en/bosses/",
+  "https://www.aion2timers.com/world-boss-timer/"
+ ],
+ "rift": {
+  "hours": [
+   2,
+   5,
+   8,
+   11,
+   14,
+   17,
+   20,
+   23
+  ],
+  "open_min": 10,
+  "window_min": 60,
+  "domination": {
+   "weekdays": [
+    1,
+    4,
+    6
+   ],
+   "hours": [
+    20,
+    23
+   ]
+  },
+  "source": "https://www.aion2timers.com/spacetime-rift-timer/"
+ },
+ "regions": {
+  "eu": "Europe/Berlin",
+  "naw": "America/Los_Angeles",
+  "nae": "America/New_York",
+  "jp": "Asia/Tokyo",
+  "kr": "Asia/Seoul",
+  "tw": "Asia/Taipei"
+ },
+ "bosses": [
+  {
+   "code": 2100050,
+   "name": "Kernon of the West",
+   "faction": "Elyos",
+   "region": "Verteron",
+   "zone": "Cantas Valley",
+   "level": 45,
+   "respawn_min": 30
+  },
+  {
+   "code": 2100003,
+   "name": "Neikel of the East",
+   "faction": "Elyos",
+   "region": "Verteron",
+   "zone": "Cantas Valley",
+   "level": 45,
+   "respawn_min": 30
+  },
+  {
+   "code": 2100040,
+   "name": "Rotten Kutar",
+   "faction": "Elyos",
+   "region": "Verteron",
+   "zone": "Elun River Swamp",
+   "level": 45,
+   "respawn_min": 30
+  },
+  {
+   "code": 2100141,
+   "name": "Blooming Korin",
+   "faction": "Elyos",
+   "region": "Verteron",
+   "zone": "Elun River Midstream",
+   "level": 45,
+   "respawn_min": 60
+  },
+  {
+   "code": 2100079,
+   "name": "Bodyguard Teegant",
+   "faction": "Elyos",
+   "region": "Verteron",
+   "zone": "Fortress Ruins",
+   "level": 45,
+   "respawn_min": 90
+  },
+  {
+   "code": 2100076,
+   "name": "Kusan the Mad Gladiator",
+   "faction": "Elyos",
+   "region": "Verteron",
+   "zone": "Fortress Ruins",
+   "level": 45,
+   "respawn_min": 120
+  },
+  {
+   "code": 2100077,
+   "name": "Ritualist Garshim",
+   "faction": "Elyos",
+   "region": "Verteron",
+   "zone": "Fortress Ruins",
+   "level": 45,
+   "respawn_min": 120
+  },
+  {
+   "code": 2100178,
+   "name": "Bloodfang Pnyn",
+   "faction": "Elyos",
+   "region": "Verteron",
+   "zone": "Tolbas Forest",
+   "level": 45,
+   "respawn_min": 180
+  },
+  {
+   "code": 2100177,
+   "name": "Furious Saursus",
+   "faction": "Elyos",
+   "region": "Verteron",
+   "zone": "Tolbas Forest",
+   "level": 45,
+   "respawn_min": 180
+  },
+  {
+   "code": 2100988,
+   "name": "Scholar Aulla",
+   "faction": "Elyos",
+   "region": "Verteron",
+   "zone": "Aulau Village",
+   "level": 45,
+   "respawn_min": 120
+  },
+  {
+   "code": 2100991,
+   "name": "Chaser Taulo",
+   "faction": "Elyos",
+   "region": "Verteron",
+   "zone": "Aulau Village",
+   "level": 45,
+   "respawn_min": 120
+  },
+  {
+   "code": 2100989,
+   "name": "Forest Warrior Aullamu",
+   "faction": "Elyos",
+   "region": "Verteron",
+   "zone": "Aulau Village",
+   "level": 45,
+   "respawn_min": 120
+  },
+  {
+   "code": 2100582,
+   "name": "Heretic Layla",
+   "faction": "Elyos",
+   "region": "Verteron",
+   "zone": "Artamia Plateau",
+   "level": 45,
+   "respawn_min": 180
+  },
+  {
+   "code": 2100617,
+   "name": "Black Tentacle Lawa",
+   "faction": "Elyos",
+   "region": "Verteron",
+   "zone": "Artamia Gorge",
+   "level": 45,
+   "respawn_min": 120
+  },
+  {
+   "code": 2100708,
+   "name": "Centurion Demiros",
+   "faction": "Elyos",
+   "region": "Verteron",
+   "zone": "Artamia Plateau",
+   "level": 45,
+   "respawn_min": 120
+  },
+  {
+   "code": 2100718,
+   "name": "Divine Ansas",
+   "faction": "Elyos",
+   "region": "Verteron",
+   "zone": "Artamia Plateau",
+   "level": 45,
+   "respawn_min": 360
+  },
+  {
+   "code": 2100876,
+   "name": "Harvest Manager Moshav",
+   "faction": "Elyos",
+   "region": "Verteron",
+   "zone": "Drana Plantation",
+   "level": 45,
+   "respawn_min": 180
+  },
+  {
+   "code": 2100877,
+   "name": "Sentinel K'nash",
+   "faction": "Elyos",
+   "region": "Verteron",
+   "zone": "Drana Plantation",
+   "level": 45,
+   "respawn_min": 120
+  },
+  {
+   "code": 2101016,
+   "name": "Researcher Setram",
+   "faction": "Elyos",
+   "region": "Verteron",
+   "zone": "Nahid Legion Fortress",
+   "level": 45,
+   "respawn_min": 180
+  },
+  {
+   "code": 2100661,
+   "name": "Phantasm Kasia",
+   "faction": "Elyos",
+   "region": "Verteron",
+   "zone": "Garden of the Illusion God",
+   "level": 45,
+   "respawn_min": 360
+  },
+  {
+   "code": 2101120,
+   "name": "Silent Dartan",
+   "faction": "Elyos",
+   "region": "Verteron",
+   "zone": "Artamia Plateau South",
+   "level": 48,
+   "respawn_min": 180
+  },
+  {
+   "code": 2101122,
+   "name": "Soul Ruler Kashapa",
+   "faction": "Elyos",
+   "region": "Verteron",
+   "zone": "Artamia Plateau East",
+   "level": 48,
+   "respawn_min": 360
+  },
+  {
+   "code": 2101131,
+   "name": "High Commander Lagta",
+   "faction": "Elyos",
+   "region": "Verteron",
+   "zone": "Red Forest",
+   "level": 48,
+   "respawn_min": 360
+  },
+  {
+   "code": 2101074,
+   "name": "Eternal Gartua",
+   "faction": "Elyos",
+   "region": "Verteron",
+   "zone": "Isle of Eternity",
+   "level": 51,
+   "respawn_min": 360
+  },
+  {
+   "code": 2400017,
+   "name": "Melted Danar",
+   "faction": "Asmodian",
+   "region": "Altgard",
+   "zone": "Dredgion Crash Site",
+   "level": 45,
+   "respawn_min": 30
+  },
+  {
+   "code": 2400074,
+   "name": "Black Warrior Aed",
+   "faction": "Asmodian",
+   "region": "Altgard",
+   "zone": "Nameless Graveyard",
+   "level": 45,
+   "respawn_min": 30
+  },
+  {
+   "code": 2400140,
+   "name": "Faithful Rajit",
+   "faction": "Asmodian",
+   "region": "Altgard",
+   "zone": "Sanctuary Watch Post",
+   "level": 45,
+   "respawn_min": 30
+  },
+  {
+   "code": 2400141,
+   "name": "Berserker Vargor",
+   "faction": "Asmodian",
+   "region": "Altgard",
+   "zone": "Sanctuary Watch Post",
+   "level": 45,
+   "respawn_min": 60
+  },
+  {
+   "code": 2400223,
+   "name": "Blood Warrior Lannar",
+   "faction": "Asmodian",
+   "region": "Altgard",
+   "zone": "Moslan Forest",
+   "level": 45,
+   "respawn_min": 90
+  },
+  {
+   "code": 2400212,
+   "name": "Predator Garsan",
+   "faction": "Asmodian",
+   "region": "Altgard",
+   "zone": "Moslan Forest",
+   "level": 45,
+   "respawn_min": 120
+  },
+  {
+   "code": 2400274,
+   "name": "Deceiver Trid",
+   "faction": "Asmodian",
+   "region": "Altgard",
+   "zone": "Urtumheim",
+   "level": 45,
+   "respawn_min": 120
+  },
+  {
+   "code": 2400335,
+   "name": "Blue Wave Kelpina",
+   "faction": "Asmodian",
+   "region": "Altgard",
+   "zone": "Forest of Purification",
+   "level": 45,
+   "respawn_min": 120
+  },
+  {
+   "code": 2400358,
+   "name": "Advisor Resana",
+   "faction": "Asmodian",
+   "region": "Altgard",
+   "zone": "Dranactus",
+   "level": 45,
+   "respawn_min": 180
+  },
+  {
+   "code": 2400353,
+   "name": "High Overseer Nutah",
+   "faction": "Asmodian",
+   "region": "Altgard",
+   "zone": "Dranactus",
+   "level": 45,
+   "respawn_min": 120
+  },
+  {
+   "code": 2400419,
+   "name": "Special Operations Leader Linx",
+   "faction": "Asmodian",
+   "region": "Altgard",
+   "zone": "Basfelt Ruins",
+   "level": 45,
+   "respawn_min": 180
+  },
+  {
+   "code": 2400424,
+   "name": "Desecrator Newbold",
+   "faction": "Asmodian",
+   "region": "Altgard",
+   "zone": "Basfelt Ruins",
+   "level": 45,
+   "respawn_min": 240
+  },
+  {
+   "code": 2400425,
+   "name": "Specter Archon Axios",
+   "faction": "Asmodian",
+   "region": "Altgard",
+   "zone": "Basfelt Ruins",
+   "level": 45,
+   "respawn_min": 240
+  },
+  {
+   "code": 2400474,
+   "name": "Addicted Hardirun",
+   "faction": "Asmodian",
+   "region": "Altgard",
+   "zone": "Pafnite Burial Ground",
+   "level": 45,
+   "respawn_min": 180
+  },
+  {
+   "code": 2400504,
+   "name": "Executioner Barthien",
+   "faction": "Asmodian",
+   "region": "Altgard",
+   "zone": "Gribade Canyon West",
+   "level": 45,
+   "respawn_min": 240
+  },
+  {
+   "code": 2400593,
+   "name": "Drakan Battalion Weapon Guruta",
+   "faction": "Asmodian",
+   "region": "Altgard",
+   "zone": "Gribade Canyon East",
+   "level": 45,
+   "respawn_min": 360
+  },
+  {
+   "code": 2400607,
+   "name": "Veteran Shujakan",
+   "faction": "Asmodian",
+   "region": "Altgard",
+   "zone": "Black Claw Village",
+   "level": 45,
+   "respawn_min": 180
+  },
+  {
+   "code": 2400608,
+   "name": "Visionary Karuka",
+   "faction": "Asmodian",
+   "region": "Altgard",
+   "zone": "Black Claw Village",
+   "level": 45,
+   "respawn_min": 240
+  },
+  {
+   "code": 2400659,
+   "name": "Dark Shadow Vishwada",
+   "faction": "Asmodian",
+   "region": "Altgard",
+   "zone": "Ragta Fortress",
+   "level": 45,
+   "respawn_min": 360
+  },
+  {
+   "code": 2400709,
+   "name": "Sharp Shylak",
+   "faction": "Asmodian",
+   "region": "Altgard",
+   "zone": "Impetusium Plaza",
+   "level": 45,
+   "respawn_min": 360
+  },
+  {
+   "code": 2400855,
+   "name": "Silent Dartan",
+   "faction": "Asmodian",
+   "region": "Altgard",
+   "zone": "Forest of Purification",
+   "level": 48,
+   "respawn_min": 360
+  },
+  {
+   "code": 2400854,
+   "name": "Soul Ruler Kashapa",
+   "faction": "Asmodian",
+   "region": "Altgard",
+   "zone": "Pafnite Burial Ground",
+   "level": 48,
+   "respawn_min": 360
+  },
+  {
+   "code": 2400853,
+   "name": "High Commander Lagta",
+   "faction": "Asmodian",
+   "region": "Altgard",
+   "zone": "Ragta Fortress",
+   "level": 48,
+   "respawn_min": 720
+  },
+  {
+   "code": 2400800,
+   "name": "Immortal Gartua",
+   "faction": "Asmodian",
+   "region": "Altgard",
+   "zone": "Isle of Immortality",
+   "level": 51,
+   "respawn_min": 720
+  }
+ ]
+}
