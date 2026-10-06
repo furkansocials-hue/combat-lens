@@ -150,7 +150,7 @@ Diğer seçenekler:
 .venv\Scripts\python tools\build_exe.py
 ```
 
-`dist\CombatLens\CombatLens.exe` ve `dist\CombatLens-x.y.z.zip` çıkar. Tek dosyalık exe için: `toolsuild_exe.py --onefile` (`dist\CombatLens.exe`).
+`dist\CombatLens\CombatLens.exe` ve `dist\CombatLens-x.y.z.zip` çıkar. Tek dosyalık exe için: `tools\build_exe.py --onefile` (`dist\CombatLens.exe`).
 
 ### Risk
 
