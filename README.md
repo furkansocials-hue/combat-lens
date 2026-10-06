@@ -51,7 +51,7 @@ Oyuna dokunmaz. Bilgisayarına gelen ağ paketlerini Npcap ile **sadece okur**: 
 ### Kurulum
 
 1. [Npcap](https://npcap.com/#download)'i kur. Kurulumda **"WinPcap API-compatible Mode"** işaretli kalsın. Npcap'in lisansı uygulamayla birlikte dağıtılmasına izin vermiyor, bu yüzden ayrı kurulur.
-2. [Releases](https://github.com/furkansocials-hue/combat-lens/releases/latest) sayfasından `CombatLens-x.y.z.zip`'i indir, bir klasöre aç ve **`CombatLens.exe`**'yi çalıştır. Windows SmartScreen uyarı verirse "Ek bilgi" → "Yine de çalıştır".
+2. [Releases](https://github.com/furkansocials-hue/combat-lens/releases/latest) sayfasından **`CombatLens.exe`**'yi indir ve çift tıkla, kurulum yok. Windows SmartScreen uyarı verirse "Ek bilgi" → "Yine de çalıştır". (Aynı yerdeki `CombatLens-x.y.z.zip` klasörlü hali: biraz daha hızlı açılır.)
    Kaynak koddan çalıştırmak için `BASLAT.bat`'a çift tıkla (Python 3.10+, `pip install pywebview`).
 3. Oyunu **Pencereli** ya da **Kenarlıksız pencere** modunda oyna. Tam ekran modunda panel oyunun arkasında kalır.
 
@@ -150,7 +150,7 @@ Diğer seçenekler:
 .venv\Scripts\python tools\build_exe.py
 ```
 
-`dist\CombatLens\CombatLens.exe` ve `dist\CombatLens-x.y.z.zip` çıkar.
+`dist\CombatLens\CombatLens.exe` ve `dist\CombatLens-x.y.z.zip` çıkar. Tek dosyalık exe için: `toolsuild_exe.py --onefile` (`dist\CombatLens.exe`).
 
 ### Risk
 
@@ -184,7 +184,7 @@ It never touches the game: it only **reads** the network traffic arriving at you
 **Install**
 
 1. Install [Npcap](https://npcap.com/#download) with *WinPcap API-compatible Mode*. Its licence does not allow bundling it.
-2. Download `CombatLens-x.y.z.zip` from [Releases](https://github.com/furkansocials-hue/combat-lens/releases/latest), unzip it and run `CombatLens.exe`.
+2. Download `CombatLens.exe` from [Releases](https://github.com/furkansocials-hue/combat-lens/releases/latest) and run it (the zip next to it is the same app as a folder).
 3. Play in windowed or borderless mode.
 
 **Accuracy**
