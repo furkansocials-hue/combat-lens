@@ -226,7 +226,8 @@ function renderRows(st, v) {
       el.className = 'row';
       el.innerHTML = `<div class="fill"></div><span class="rk num"></span><span class="em"></span>
         <div class="who"><div class="nm"><span></span></div><div class="sub"></div></div>
-        <div class="val"><div class="amt num"></div><div class="rate num"></div></div><div class="pct num"></div>`;
+        <div class="val"><div class="amt num"></div><div class="rate num"></div></div>
+        <div class="hv hidden"><div class="hamt num"></div><div class="hrate num"></div></div><div class="pct num"></div>`;
       el.onclick = () => act('analysis', { id: S.view ? S.view.id : '' });
       rowEls.set(r.key, el);
     }
@@ -243,10 +244,16 @@ function renderRows(st, v) {
     set(el, 'nm', r.name + (r.is_local ? '*' : ''), () => {
       el.querySelector('.nm').innerHTML = `<span>${esc(r.name)}</span>` + (r.is_local ? `<span class="pill me">${t('you')}</span>` : '');
     });
-    const heal = r.heal ? `<span class="hl">♥ ${fmtNum(r.heal)} · ${fmtNum(r.hps)}/s</span>` : null;
-    const sub = [c.name !== '?' ? esc(c.name) : null, heal, r.total ? t('crit') + ' ' + fmtPct((r.crit_rate || 0) * 100, 0) : null,
+    const sub = [c.name !== '?' ? c.name : null, r.total ? t('crit') + ' ' + fmtPct((r.crit_rate || 0) * 100, 0) : null,
       r.combat_power ? 'CP ' + fmtNum(r.combat_power) : null].filter(Boolean).join(' · ');
-    html(el.querySelector('.sub'), sub);
+    txt(el.querySelector('.sub'), sub);
+    // a Cleric's or Chanter's healing: its own column right next to the damage and DPS
+    const hv = el.querySelector('.hv');
+    hv.classList.toggle('hidden', !r.heal);
+    if (r.heal) {
+      txt(el.querySelector('.hamt'), '♥ ' + fmtNum(r.heal));
+      txt(el.querySelector('.hrate'), fmtNum(r.hps) + '/s');
+    }
     txt(el.querySelector('.amt'), fmtNum(r.total));  // total damage leads, DPS under it
     const rateEl = el.querySelector('.rate');
     set(el, 'rate', r.dps, () => { rateEl.innerHTML = `${fmtNum(r.dps)}<small>/s</small>`; });
