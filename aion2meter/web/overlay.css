@@ -137,6 +137,22 @@ body { padding: 0; }
 .tb-gap { width: 22px; flex: none; }
 .tb-note { font-size: 10.5px; color: var(--text-3); margin: 8px 2px 0; line-height: 1.4; }
 
+/* self-update */
+.update { flex: 1; display: flex; flex-direction: column; align-items: center; justify-content: center; text-align: center; padding: 10px 22px 14px; gap: 6px; }
+.update .up-logo .logo { width: 44px; height: 44px; filter: drop-shadow(0 4px 14px rgba(155, 107, 255, .5)); }
+.update .up-title { font: 700 16px var(--font-d); margin-top: 4px; }
+.update .up-ver { color: var(--text-2); font-size: 12px; font-weight: 600; }
+.up-bar { width: 100%; max-width: 300px; height: 8px; border-radius: 8px; background: rgba(255, 255, 255, .08); overflow: hidden; margin-top: 8px; position: relative; }
+.up-bar i { display: block; height: 100%; border-radius: 8px; background: var(--grad); transition: width .3s ease; }
+.up-bar.busy i { background: linear-gradient(90deg, rgba(155, 107, 255, .25), #9b6bff, rgba(46, 230, 197, .6), rgba(155, 107, 255, .25));
+  background-size: 200% 100%; animation: upflow 1.1s linear infinite; }
+.up-bar.err i { background: var(--bad); animation: none; }
+@keyframes upflow { from { background-position: 200% 0; } to { background-position: 0 0; } }
+.update .up-stage { font-size: 12px; color: var(--text); font-weight: 600; min-height: 16px; }
+.update .up-note { font-size: 11px; color: var(--text-3); max-width: 280px; }
+.update .up-err { font-size: 11px; color: #ff8b9b; max-width: 300px; }
+.update .up-acts { display: flex; gap: 8px; margin-top: 6px; flex-wrap: wrap; justify-content: center; }
+
 /* settings */
 .settings { flex: 1; overflow-y: auto; padding: 2px 10px 10px; }
 .settings h3 { margin: 4px 0 8px; font-size: 12px; text-transform: uppercase; letter-spacing: .8px; color: var(--text-3); display: flex; align-items: center; gap: 6px; }

@@ -2,6 +2,7 @@
 import argparse
 import importlib.util
 import sys
+import threading
 import time
 
 from .gamedata import GameData, update_data
@@ -21,7 +22,7 @@ class _Static:
                 "candidates": 0, "silent_ms": 0}
 
 
-def _web(store, dispatcher, gd, log, start_capture=None, label=None):
+def _web(store, dispatcher, gd, log, start_capture=None, label=None, just_updated=False):
     """The WebView2 interface. False when it cannot run here (then the classic window is used)."""
     if importlib.util.find_spec("webview") is None:
         log("pywebview kurulu değil: klasik pencere açılıyor")
@@ -32,7 +33,8 @@ def _web(store, dispatcher, gd, log, start_capture=None, label=None):
         log(f"web arayüzü yüklenemedi: {e!r}")
         return False
     try:
-        WebApp(store, dispatcher, gd, start_capture=start_capture, log=log, label=label).run()
+        WebApp(store, dispatcher, gd, start_capture=start_capture, log=log, label=label,
+               just_updated=just_updated).run()
     except Exception as e:
         log(f"web arayüzü açılamadı: {e!r}")
         return False
@@ -51,7 +53,18 @@ def main(argv=None):
     ap.add_argument("--demo", action="store_true", help="sahte veriyle pencereyi önizle (gerçek veri değil)")
     ap.add_argument("--tab", choices=("me", "party"), default=None, help="açılıştaki sekme (klasik pencere)")
     ap.add_argument("--tk", action="store_true", help="klasik (Tkinter) pencereyi kullan")
+    # self-update (started by the updater, not by hand)
+    ap.add_argument("--wait-pid", type=int, default=None, help=argparse.SUPPRESS)
+    ap.add_argument("--install-update", metavar="KLASOR", default=None, help=argparse.SUPPRESS)
+    ap.add_argument("--updated", action="store_true", help=argparse.SUPPRESS)
     args = ap.parse_args(argv)
+
+    from . import updater
+    if args.wait_pid:
+        updater.wait_for_exit(args.wait_pid)  # the old version is closing: wait for its files and lock
+    if args.install_update:
+        updater.install_folder(args.install_update, updater.relaunch_args())
+        return 0
 
     # One live meter at a time: a second double-click brings the running one forward
     # (checked before the log is opened, so the running meter's log is not wiped).
@@ -65,6 +78,9 @@ def main(argv=None):
             return 0
 
     migrate_legacy()
+    updater.cleanup_after_update()
+    if args.updated:  # the old exe may still be held for a moment by the process that started it
+        threading.Timer(20, updater.cleanup_after_update).start()
     logfile = open(LOG_PATH, "w", encoding="utf-8", buffering=1)
 
     def log(msg):
@@ -84,7 +100,7 @@ def main(argv=None):
         from .demo import DemoDispatcher
         d = DemoDispatcher(store)
         d.start()
-        if args.tk or not _web(store, d, gd, log, label="demo"):
+        if args.tk or not _web(store, d, gd, log, label="demo", just_updated=args.updated):
             from .ui import run_ui
             run_ui(store, d, gd, tab=args.tab)
         return 0
@@ -95,7 +111,7 @@ def main(argv=None):
         log(f"replay: {time.time() - t0:.1f}s  {d.status()}")
         if args.console:
             print(summary_text(store))
-        elif args.tk or not _web(store, _Static(), gd, log, label="replay"):
+        elif args.tk or not _web(store, _Static(), gd, log, label="replay", just_updated=args.updated):
             from .ui import run_ui
             run_ui(store, _Static(), gd, tab=args.tab)
         return 0
@@ -129,7 +145,7 @@ def main(argv=None):
                 return 1
         if args.console:
             _console(store, dispatcher, args.seconds)
-        elif args.tk or not _web(store, dispatcher, gd, log, start_capture=start_capture):
+        elif args.tk or not _web(store, dispatcher, gd, log, start_capture=start_capture, just_updated=args.updated):
             if not captures:
                 try:
                     start_capture()

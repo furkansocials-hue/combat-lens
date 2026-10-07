@@ -5,7 +5,6 @@ import os
 import tempfile
 import threading
 import time
-import urllib.request
 
 from . import __version__
 from .api import encounter_detail, history_list, overlay_state
@@ -15,6 +14,7 @@ from .report import build_view
 from .server import NOT_FOUND, UIServer
 from .settings import Settings
 from .timers import BossTimers
+from .updater import Updater, is_newer, latest_release, pick_asset
 from .winutil import Hotkeys, round_corners, set_clickthrough
 
 STRIP_H = 38
@@ -23,16 +23,9 @@ PANEL_BG = "#111018"  # the overlay's own colour, behind the page while it loads
 _SAFE_URLS = ("https://npcap.com", "https://github.com/", "https://www.microsoft.com/")
 
 
-def _version_tuple(v):
-    out = []
-    for part in str(v).lstrip("vV").split("."):
-        digits = "".join(ch for ch in part if ch.isdigit())
-        out.append(int(digits or 0))
-    return tuple(out)
-
 
 class WebApp:
-    def __init__(self, store, dispatcher, gd, start_capture=None, log=print, label=None):
+    def __init__(self, store, dispatcher, gd, start_capture=None, log=print, label=None, just_updated=False):
         self.store = store
         self.dispatcher = dispatcher
         self.gd = gd
@@ -44,7 +37,10 @@ class WebApp:
         self.settings = Settings()
         # a demo or a replayed recording is shown, never added to your saved fights
         self.history = History(folder=tempfile.mkdtemp(prefix="combatlens_")) if label else History()
-        self.update_info = None
+        self.update_info = None  # {version, url, can_install} when a newer release is out
+        self._release = None
+        self.updater = Updater(log)
+        self.just_updated = just_updated
         self.clickthrough = False
         self.hidden = False
         self.hotkeys = None
@@ -83,10 +79,12 @@ class WebApp:
         if route == "state":
             out = overlay_state(self, q.get("mode") or s["mode"], q.get("tab") or s["tab"], q.get("pin"),
                                 s["keep_fight"])
+            out["status"]["updating"] = None if self.updater.state["stage"] == "idle" else self.updater.state
             out["ui"] = {"folded": s["folded"], "lang": s["lang"], "mode": s["mode"], "tab": s["tab"],
                          "opacity": s["opacity"], "welcomed": s["welcomed"], "label": self.label,
                          "npcap_error": self.npcap_error, "hotkeys": s["hotkeys"],
-                         "analysis_open": self.analysis is not None, "keep_fight": s["keep_fight"],
+                         "analysis_open": self.analysis is not None, "version": __version__,
+                         "just_updated": __version__ if self.just_updated else None, "keep_fight": s["keep_fight"],
                          "faction": s["faction"], "region": s["region"]}
             return out
         if route == "timers":
@@ -149,6 +147,16 @@ class WebApp:
             self.timers.clear(int(body.get("code", 0)))
         elif op == "boss_cycle":
             self.timers.set_cycle(int(body.get("code", 0)), int(body.get("minutes", 0)))
+        elif op == "check_update":
+            ok = self._check_updates(force=True)
+            return {"ok": ok, "update": self.update_info, "version": __version__}
+        elif op == "install_update":
+            if self._release is None or not (self.update_info or {}).get("can_install"):
+                return {"error": "no update"}
+            self.updater.start(self._release, on_ready=self._quit_for_update)
+        elif op == "update_dismiss":
+            if not self.updater.busy():
+                self.updater.state = {"stage": "idle"}
         elif op == "update_data":
             threading.Thread(target=self._update_data, daemon=True).start()
         elif op == "copy_text":
@@ -244,8 +252,12 @@ class WebApp:
             self._geom_dirty = True
 
     def _housekeeping(self):
+        last_check = time.time()
         while True:
             time.sleep(2)
+            if time.time() - last_check > 6 * 3600:  # a long session hears about a new release too
+                last_check = time.time()
+                self._check_updates()
             if self._geom_dirty:
                 self._geom_dirty = False
                 self.settings.update({})
@@ -449,20 +461,26 @@ class WebApp:
         self.npcap_error = None
         return True
 
-    def _check_updates(self):
-        if not GITHUB_REPO or not self.settings["check_updates"]:
-            return
+    def _check_updates(self, force=False):
+        """False when GitHub could not be reached."""
+        if not GITHUB_REPO or not (force or self.settings["check_updates"]):
+            return True
         try:
-            req = urllib.request.Request(f"https://api.github.com/repos/{GITHUB_REPO}/releases/latest",
-                                         headers={"User-Agent": APP_NAME, "Accept": "application/vnd.github+json"})
-            with urllib.request.urlopen(req, timeout=10) as r:
-                rel = json.loads(r.read())
-        except Exception:
-            return
-        tag = rel.get("tag_name") or ""
-        if _version_tuple(tag) > _version_tuple(__version__) and tag != self.settings["skipped_version"]:
-            self.update_info = {"version": tag.lstrip("vV"), "url": rel.get("html_url") or
-                                f"https://github.com/{GITHUB_REPO}/releases/latest"}
+            info = latest_release()
+        except Exception as e:
+            self.log(f"güncelleme denetlenemedi: {e!r}")
+            return False
+        if is_newer(info):
+            self._release = info
+            self.update_info = {"version": info["version"], "url": info["page"],
+                                "can_install": pick_asset(info) is not None}
+        else:
+            self._release = self.update_info = None
+        return True
+
+    def _quit_for_update(self):
+        """The new version is in place and starting: this one steps aside."""
+        self._close(None)
 
     def _update_data(self):
         from .gamedata import update_data

@@ -15,7 +15,7 @@ from aion2meter.history import History  # noqa: E402
 from aion2meter.report import build_view, skill_rows  # noqa: E402
 from aion2meter.server import UIServer  # noqa: E402
 from aion2meter.settings import Settings  # noqa: E402
-from aion2meter.webapp import _version_tuple  # noqa: E402
+from aion2meter.updater import version_tuple as _version_tuple  # noqa: E402
 from aion2meter.winutil import MOD_ALT, MOD_CONTROL, MOD_SHIFT, parse_hotkey  # noqa: E402
 from test_protocol import GD, damage_record, new, packet  # noqa: E402
 

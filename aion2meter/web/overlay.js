@@ -5,7 +5,8 @@ const $ = id => document.getElementById(id);
 let S = null;            // last /api/state
 let tab = null;          // 'me' | 'party' (null until the server tells us)
 let pin = null;          // encounter id being looked at (null: follow the newest)
-let screen = 'rows';     // rows | settings | timers | welcome
+let screen = 'rows';     // rows | settings | timers | welcome (an update in progress covers them all)
+let updatedShown = false;
 let langShown = null;
 let info = null;         // /api/settings (version, failed hotkeys)
 let welcomed = false;    // dismissed in this session (the saved flag may lag a poll behind)
@@ -64,7 +65,12 @@ function init() {
   $('s-close').onclick = () => act('close');
   $('n-prev').onclick = () => step(+1);
   $('n-next').onclick = () => step(-1);
-  $('f-upd').onclick = () => S && S.status.update && act('open_url', { url: S.status.update.url });
+  $('f-upd').onclick = () => {
+    const u = S && S.status.update;
+    if (!u) return;
+    if (u.can_install) act('install_update').then(refresh);
+    else act('open_url', { url: u.url });
+  };
   loadTimers(true);
   makeGrip($('grip'), 'overlay');
   makeGrip($('s-grip'), 'overlay', { fixedHeight: true });
@@ -120,7 +126,17 @@ function render() {
   $('b-settings').classList.toggle('on', screen === 'settings');
   $('b-timers').classList.toggle('on', screen === 'timers');
   document.querySelectorAll('#tabs button').forEach(b => b.classList.toggle('on', b.dataset.tab === tab));
+  if (S.ui.just_updated && !updatedShown) { updatedShown = true; toast(t('updated_to', S.ui.just_updated)); }
   if (folded) return renderStrip();
+
+  const updating = st.updating;
+  $('update').classList.toggle('hidden', !updating);
+  if (updating) {
+    ['target', 'notices', 'rnote', 'rows', 'settings', 'timers', 'welcome'].forEach(id => $(id).classList.add('hidden'));
+    renderUpdate(updating);
+    renderFooter(st, v);
+    return;
+  }
 
   renderTarget(v);
   renderNotices(st);
@@ -260,8 +276,8 @@ function renderFooter(st, v) {
   if (v && !v.party_known) tips.push(t('party_unknown'));
   $('f-st').title = tips.join('\n');
   const upd = $('f-upd');
-  upd.classList.toggle('hidden', !st.update);
-  if (st.update) txt(upd, t('update_avail', st.update.version));
+  upd.classList.toggle('hidden', !st.update || !!st.updating);
+  if (st.update) txt(upd, t('update_avail', st.update.version) + (st.update.can_install ? ' · ' + t('update_now') : ''));
   const nav = S.nav;
   $('f-nav').classList.toggle('hidden', !nav || (nav.count < 2 && !nav.newest_cleared) || screen !== 'rows');
   if (nav) {
@@ -273,6 +289,12 @@ function renderFooter(st, v) {
 
 function renderStrip() {
   const v = S.view;
+  const up = S.status.updating;
+  if (up) {
+    txt($('s-name'), t('updating') + (up.stage === 'download' ? ' %' + (up.pct || 0) : ''));
+    txt($('s-time'), '');
+    return;
+  }
   txt($('s-name'), v ? titleOf(v) : (S.status.locked ? t('waiting_fight') : t('waiting_game')));
   txt($('s-time'), v ? fmtTime(v.duration_ms) : '');
   let val = '';
@@ -286,6 +308,39 @@ function renderStrip() {
   const hp = v && v.hp;
   $('s-hp').classList.toggle('hidden', !hp);
   if (hp) $('s-hpbar').style.width = (hp[1] ? hp[0] / hp[1] * 100 : 0).toFixed(1) + '%';
+}
+
+/* ───────── self-update ───────── */
+
+function renderUpdate(up) {
+  const box = $('update');
+  const stage = up.stage;
+  const err = stage === 'error';
+  const key = [LANG, stage, up.error || ''].join('|');
+  if (box.dataset.key !== key) {
+    box.dataset.key = key;
+    box.innerHTML = `
+      <div class="up-logo">${logo()}</div>
+      <div class="up-title">${err ? t('up_failed') : t('updating')}</div>
+      <div class="up-ver num">v${esc(S.ui.version)} → v${esc(up.version || '')}</div>
+      <div class="up-bar${err ? ' err' : ''}${stage === 'download' ? '' : ' busy'}"><i id="up-fill"></i></div>
+      <div class="up-stage" id="up-stage"></div>
+      ${err ? `<div class="up-err">${esc(up.error || '')}</div>
+        <div class="up-acts"><button class="btn primary" id="up-retry">${ic('sync')}${t('retry')}</button>
+        <button class="btn" id="up-page">${ic('link')}${t('up_page')}</button><button class="btn" id="up-close">${t('close')}</button></div>`
+      : `<div class="up-note">${t('up_note')}</div>`}`;
+    if (err) {
+      $('up-retry').onclick = () => act('install_update').then(refresh);
+      $('up-page').onclick = () => S.status.update && act('open_url', { url: S.status.update.url });
+      $('up-close').onclick = () => act('update_dismiss').then(refresh);
+    }
+  }
+  const mb = n => dec((n / 1048576).toFixed(1));
+  const label = stage === 'download'
+    ? `${t('up_download')} ${fmtPct(up.pct || 0, 0)}${up.total ? `  ·  ${mb(up.done)} / ${mb(up.total)} MB` : ''}`
+    : err ? '' : t('up_' + stage);
+  txt($('up-stage'), label);
+  $('up-fill').style.width = (stage === 'download' ? (up.pct || 0) : 100) + '%';
 }
 
 /* ───────── settings & welcome ───────── */
@@ -310,6 +365,7 @@ function renderSettings() {
     <div class="set" style="display:block"><div class="lb" style="margin-bottom:4px"><div>${t('s_hotkeys')}</div></div>${keyRows}</div>
     <div class="set"><div class="lb"><div>${t('s_data')}</div></div><button class="btn" id="upd-data">${ic('sync')}${t('update_data')}</button></div>
     <div class="set-foot"><button class="btn" id="open-dir">${ic('folder')}${t('s_folder')}</button>
+      <button class="btn" id="chk-upd">${ic('sync')}${t('check_updates')}</button>
       <span class="dim">${info ? esc(t('s_version', info.version)) : ''}</span></div>`;
   const box = $('settings');
   if (box.dataset.h === html) return;
@@ -328,6 +384,13 @@ function renderSettings() {
   $('ct').onchange = e => act('clickthrough', { on: e.target.checked }).then(refresh);
   $('upd-data').onclick = () => { act('update_data'); toast(t('s_data_started')); };
   $('open-dir').onclick = () => act('open_folder');
+  $('chk-upd').onclick = async () => {
+    const r = await act('check_update');
+    if (!r.ok) toast(t('update_check_failed'));
+    else if (r.update) toast(t('update_avail', r.update.version) + (r.update.can_install ? '' : ' · ' + t('up_source')));
+    else toast(t('up_to_date', r.version));
+    refresh();
+  };
 }
 
 function renderWelcome() {

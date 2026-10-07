@@ -47,6 +47,7 @@ Oyuna dokunmaz. Bilgisayarına gelen ağ paketlerini Npcap ile **sadece okur**: 
 
 - **Türkçe / English** arayüz. Panelin saydamlığı ayarlanabilir.
 - Npcap yoksa ilk açılışta indirme bağlantısını gösterir.
+- **Kendini günceller:** yeni sürüm çıkınca panelin altında "Güncelle" belirir. Tıklayınca indirir, doğrular, kurar ve yeniden açılır; ayarlar ve geçmiş olduğu gibi kalır.
 
 ### Kurulum
 
@@ -183,6 +184,7 @@ It never touches the game: it only **reads** the network traffic arriving at you
 - Global hotkeys (table above).
 - Turkish / English UI.
 - Npcap check on first run.
+- One-click self-update from GitHub releases (download, checksum, restart).
 
 **Install**
 
