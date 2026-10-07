@@ -196,10 +196,11 @@ function renderAll() {
         <div class="card"><div class="card-h"><h2>${ic('users')}${t('party_dmg')}</h2><span class="sp"></span><span class="sub" id="pt-sub"></span></div><div id="pt"></div></div>
         <div class="card"><div class="card-h"><h2 id="sum-h"></h2></div><div class="sum" id="sum"></div></div>
         <div class="card full"><div class="card-h"><h2>${ic('sword')}${t('skills')}</h2><span class="sp"></span><span class="sub" id="sk-sub"></span></div><div class="sk-wrap" id="sk"></div></div>
+        <div class="card full" id="hs-card" style="display:none"><div class="card-h"><h2>${ic('heart')}${t('heal_skills')}</h2><span class="sp"></span><span class="sub" id="hs-sub"></span></div>
+          <div class="sk-wrap" id="hs"></div><div class="hs-note">${t('heal_note')}</div></div>
         <div class="card full"><div class="card-h"><h2>${ic('chart')}${t('curve')}</h2><span class="sub">${t('curve_sub')}</span><span class="sp"></span><div class="legend" id="legend"></div></div>
           <div class="curve"><div class="chart" id="chart"></div></div></div>
-        <div class="card"><div class="card-h"><h2>${ic('target')}${t('targets_t')}</h2></div><div class="list" id="tg"></div></div>
-        <div class="card"><div class="card-h"><h2>${ic('heart')}${t('heals_t')}</h2><span class="sp"></span><span class="sub" id="hl-sub"></span></div><div class="list" id="hl"></div></div>
+        <div class="card full"><div class="card-h"><h2>${ic('target')}${t('targets_t')}</h2></div><div class="list" id="tg"></div></div>
       </div>`;
   }
   if (!selKey || !D.players.find(p => p.key === selKey)) {
@@ -471,18 +472,23 @@ function renderTargets() {
   if (box.dataset.h !== html) { box.dataset.h = html; box.innerHTML = html; }
 }
 
+// a Cleric's or Chanter's healing, skill by skill, laid out like the damage table above it
 function renderHeals() {
   const p = player();
-  const box = $('hl');
-  $('hl-sub').textContent = p && p.heal_total ? fmtNum(p.heal_total) : '';
-  let html;
-  if (!p || !p.heals.length) html = `<div class="none">${t('no_heals')}</div>`;
-  else {
-    const top = Math.max(1, ...p.heals.map(h => h.total));
-    html = p.heals.slice(0, 12).map(h => `<div class="li heal"><div class="bg" style="width:${(h.total / top * 100).toFixed(1)}%"></div>
-      ${skillIcon(h.icon)}<span class="n">${esc(h.name)} <small>×${h.hits}</small></span>
-      <span class="v num">${fmtNum(h.total)}<small>${t('max')} ${fmtNum(h.max)}</small></span></div>`).join('');
-  }
+  const card = $('hs-card'), box = $('hs');
+  const heals = p && p.heal ? p.heals : [];  // Clerics and Chanters only, as on the panel
+  card.style.display = heals.length ? '' : 'none';
+  if (!heals.length) { box.dataset.h = ''; box.innerHTML = ''; return; }
+  $('hs-sub').textContent = `${fmtNum(p.heal_total)} · ${fmtNum(p.hps || 0)}/s · ${p.name}`;
+  const top = Math.max(1, ...heals.map(h => h.total));
+  const body = heals.map(h => `<tr><td><div class="nm">${skillIcon(h.icon)}<span title="${esc(h.name)}">${esc(h.name)}</span>
+      ${h.is_hot ? `<span class="pill">${t('hot_tag')}</span>` : ''}</div></td>
+    <td class="tt num"><div class="l"><b>${fmtNum(h.total)}</b><small>${fmtPct(h.pct)}</small></div>
+      <div class="b"><i style="width:${(h.total / top * 100).toFixed(1)}%;background:linear-gradient(90deg,#3ddc97,#3ddc9766)"></i></div></td>
+    <td class="num">${fmtNum(h.hps)}</td><td class="num">${fmtFull(h.hits)}${h.is_hot ? ` <small class="dim">${t('ticks')}</small>` : ''}</td>
+    <td class="num">${fmtNum(h.max)}</td><td class="num">${fmtNum(h.avg)}</td></tr>`).join('');
+  const html = `<table class="sk hs"><thead><tr><th>${t('skill')}</th><th class="on">${t('total')}</th><th>HPS</th>
+    <th>${t('hits')}</th><th>${t('max')}</th><th>${t('avg')}</th></tr></thead><tbody>${body}</tbody></table>`;
   if (box.dataset.h !== html) { box.dataset.h = html; box.innerHTML = html; }
 }
 

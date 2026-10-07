@@ -178,6 +178,12 @@ class HealerTest(TempDirCase):
         self.assertEqual(rows["Corin"]["heal"], 0)
         self.assertIn("Velka", rows)  # never hit anything, still on the list
         self.assertEqual((rows["Velka"]["total"], rows["Velka"]["heal"]), (0, 6 * 1500))
+        # the analysis window: the healer's heal skills, the potion left out
+        mirae = next(p for p in encounter_detail(_App(store, History(self.dir)), store.current.id, "all")["players"]
+                     if p["name"] == "Mirae")
+        self.assertEqual([(h["hits"], h["total"], h["is_hot"], h["pct"]) for h in mirae["heals"]], [(6, 12000, False, 100.0)])
+        self.assertAlmostEqual(mirae["heals"][0]["hps"], 1200)
+        self.assertEqual((mirae["heal_total"], mirae["heals"][0]["avg"]), (12000, 2000))
 
 
 class ServerTest(unittest.TestCase):

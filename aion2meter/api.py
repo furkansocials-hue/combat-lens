@@ -150,15 +150,19 @@ def encounter_detail(app, fid, mode):
                 if not _counts_as_heal(code, h, own):
                     continue
                 name = gd.skill_name(code) or gd.skill_name(gd.normalize_skill_id(code)) or f"Skill {code}"
-                heals.append({"name": name + (" (HoT)" if hot else ""),
-                              "icon": _icon(gd.icon_for(code)), "total": h.total, "hits": h.hits, "max": h.max})
+                heals.append({"name": name, "is_hot": hot, "icon": _icon(gd.icon_for(code)),
+                              "total": h.total, "hits": h.hits, "max": h.max, "avg": h.total / h.hits if h.hits else 0,
+                              "hps": h.total / r["seconds"] if r.get("seconds") else 0})
+        heal_total = sum(h["total"] for h in heals)
+        for h in heals:
+            h["pct"] = h["total"] / heal_total * 100 if heal_total else 0
         buckets = r.get("buckets", {})
         players.append(dict(
             {k: r.get(k) for k in ROW_FIELDS},
             summary={k: v for k, v in summ.items() if k != "targets"},
             targets=[{"name": n, "boss": b, "total": d} for (n, b), d in summ["targets"][:12]],
             skills=skills,
-            heal_total=sum(h["total"] for h in heals),
+            heal_total=heal_total,
             heals=heals,
             timeline=sorted((sec - t0, d) for sec, d in buckets.items()),
         ))

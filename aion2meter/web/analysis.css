@@ -137,7 +137,12 @@ body { display: flex; flex-direction: column; height: 100vh; border: 1px solid #
 .li .n small { color: var(--text-3); font-weight: 500; }
 .li .v { font-weight: 800; font-size: 12.5px; }
 .li .v small { color: var(--text-3); font-weight: 600; margin-left: 6px; }
-.li.heal .bg { background: linear-gradient(90deg, rgba(61, 220, 151, .2), rgba(61, 220, 151, .03)); }
+.sk.hs { min-width: 560px; }
+.sk.hs th { cursor: default; }
+.sk.hs th.on { color: #7ff0b4; }
+.sk.hs .tt .l b { color: #7ff0b4; }
+.sk.hs small.dim { color: var(--text-3); font-size: 10px; }
+.hs-note { font-size: 10.5px; color: var(--text-3); padding: 0 10px 10px; }
 .none { color: var(--text-3); font-size: 12px; padding: 4px 2px 8px; }
 
 .blank { flex: 1; display: grid; place-content: center; justify-items: center; gap: 8px; color: var(--text-2); text-align: center; }
