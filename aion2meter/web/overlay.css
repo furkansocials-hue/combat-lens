@@ -123,6 +123,7 @@ body { padding: 0; }
 .tb-row { display: flex; align-items: center; gap: 6px; padding: 5px 4px 5px 9px; border-radius: 8px; background: rgba(255, 255, 255, .035); }
 .tb-row.due { background: rgba(255, 181, 71, .12); box-shadow: inset 0 0 0 1px rgba(255, 181, 71, .35); }
 .tb-row.up { background: rgba(61, 220, 151, .08); }
+.tb-bar + .note { margin: 0 0 7px; }
 .tb-row.on { background: rgba(61, 220, 151, .13); box-shadow: inset 0 0 0 1px rgba(61, 220, 151, .3); }
 .tb-who { flex: 1; min-width: 0; }
 .tb-n { font-weight: 700; font-size: 12px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }

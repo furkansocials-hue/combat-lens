@@ -135,6 +135,7 @@ function renderTimers() {
         <span class="sp"></span>
         <select id="tb-reg" title="${t('region')}">${regions}</select>
       </div>
+      ${seen ? '' : `<div class="note info">${ic('clock')}<span class="grow">${t('b_open_map')}</span></div>`}
       <div class="tb-list">${rows}</div>
       <div class="tb-note">${seen ? t('b_live_seen', clockIn(seen)) + ' ' : ''}${t('b_source')}</div>`;
     box.querySelector('#tb-fac').onclick = e => {
