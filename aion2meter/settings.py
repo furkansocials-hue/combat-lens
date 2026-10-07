@@ -10,6 +10,7 @@ PATH = user_path("ayarlar.json")
 DEFAULTS = {
     "lang": "tr",            # UI language: tr / en
     "opacity": 0.92,         # overlay window opacity
+    "scale": 0.9,            # interface size; the overlay's saved size is at 1.0 and its window this much of it
     "mode": "all",           # all targets / main target
     "tab": "party",          # party / me
     "overlay": {"x": None, "y": None, "w": 380, "h": 300},

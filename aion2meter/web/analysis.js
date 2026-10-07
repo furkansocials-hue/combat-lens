@@ -77,6 +77,7 @@ window.openFight = id => { follow = false; select(id); };
 async function loadMeta() {
   try {
     const s = await api('settings');
+    applyScale(s.scale);
     if (mode === null) mode = s.mode;
     if (langShown !== s.lang) {
       setLang(s.lang); langShown = s.lang; staticTexts(); builtFor = null;

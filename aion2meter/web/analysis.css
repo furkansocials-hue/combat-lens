@@ -1,5 +1,5 @@
 html, body { background: var(--bg); }
-body { display: flex; flex-direction: column; height: 100vh; border: 1px solid #262335; }
+body { display: flex; flex-direction: column; height: 100%; border: 1px solid #262335; }
 
 /* title bar */
 .tb { height: 40px; display: flex; align-items: center; gap: 10px; padding: 0 6px 0 14px; flex: none;

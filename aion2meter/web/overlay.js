@@ -96,6 +96,7 @@ async function refresh() {
   polling = true;
   try {
     S = await api('state', { tab, pin });
+    applyScale(S.ui.scale);
     if (tab === null) tab = S.ui.tab;
     if (pin && S.nav && !S.nav.ids.includes(pin)) pin = null;
     render();
@@ -362,6 +363,8 @@ function renderSettings() {
     <h3>${ic('gear', 'width="13" height="13" style="stroke:currentColor;fill:none;stroke-width:2"')}${t('settings')}</h3>
     <div class="set"><div class="lb"><div>${t('s_language')}</div></div>
       <div class="seg" data-key="lang"><button data-v="tr" class="${ui.lang === 'tr' ? 'on' : ''}">Türkçe</button><button data-v="en" class="${ui.lang === 'en' ? 'on' : ''}">English</button></div></div>
+    <div class="set"><div class="lb"><div>${t('s_scale')}</div></div>
+      <div class="seg" data-key="scale">${[0.8, 0.9, 1, 1.1].map(v => `<button data-v="${v}" class="${Math.abs(ui.scale - v) < 0.01 ? 'on' : ''}">${fmtPct(v * 100, 0)}</button>`).join('')}</div></div>
     <div class="set"><div class="lb"><div>${t('s_opacity')}</div><small class="num" id="op-v">${Math.round(ui.opacity * 100)}%</small></div>
       <input type="range" id="op" min="35" max="100" value="${Math.round(ui.opacity * 100)}"></div>
     <div class="set"><div class="lb"><div>${t('s_mode')}</div></div>
@@ -381,7 +384,8 @@ function renderSettings() {
   box.innerHTML = html;
   box.querySelectorAll('.seg[data-key]').forEach(seg => seg.addEventListener('click', e => {
     const b = e.target.closest('button[data-v]');
-    if (b) act('settings', { values: { [seg.dataset.key]: seg.dataset.key === 'keep_fight' ? +b.dataset.v : b.dataset.v } }).then(refresh);
+    const numeric = ['keep_fight', 'scale'].includes(seg.dataset.key);
+    if (b) act('settings', { values: { [seg.dataset.key]: numeric ? +b.dataset.v : b.dataset.v } }).then(refresh);
   }));
   let opTimer = null;
   $('op').addEventListener('input', e => {

@@ -50,7 +50,7 @@ const STR = {
     welcome_2: 'Her boss bitince sayılar kendiliğinden sıfırlanır; geçmiş savaşlar Analiz’de saklanır.',
     welcome_3: 'Kısayollar: {0} sıfırla · {1} küçült · {2} tıklama geçirgen.', welcome_ok: 'Anladım',
     welcome_risk: 'Üçüncü parti araçlar oyunun kurallarına aykırı sayılabilir; kullanım riski sana aittir.',
-    s_language: 'Dil', s_opacity: 'Saydamlık', s_mode: 'Sayım', s_clickthrough: 'Tıklama geçirgen mod',
+    s_language: 'Dil', s_scale: 'Boyut', s_opacity: 'Saydamlık', s_mode: 'Sayım', s_clickthrough: 'Tıklama geçirgen mod',
     s_clickthrough_sub: 'Tıklamalar oyuna geçer. Kısayolla geri alınır.', s_hotkeys: 'Kısayollar',
     s_updates: 'Güncellemeleri denetle', s_data: 'Oyun verisi (skill / NPC adları)', s_folder: 'Veri klasörünü aç',
     s_back: 'Geri', s_version: 'Sürüm {0}', s_hotkey_failed: 'kullanımda', s_data_started: 'Veri güncelleniyor…',
@@ -111,7 +111,7 @@ const STR = {
     welcome_2: 'Numbers reset by themselves after each boss; past fights are kept in Analysis.',
     welcome_3: 'Hotkeys: {0} reset · {1} fold · {2} click-through.', welcome_ok: 'Got it',
     welcome_risk: 'Third-party tools may break the game’s rules; use at your own risk.',
-    s_language: 'Language', s_opacity: 'Opacity', s_mode: 'Counting', s_clickthrough: 'Click-through mode',
+    s_language: 'Language', s_scale: 'Size', s_opacity: 'Opacity', s_mode: 'Counting', s_clickthrough: 'Click-through mode',
     s_clickthrough_sub: 'Clicks go to the game. Undo with the hotkey.', s_hotkeys: 'Hotkeys',
     s_updates: 'Check for updates', s_data: 'Game data (skill / NPC names)', s_folder: 'Open data folder',
     s_back: 'Back', s_version: 'Version {0}', s_hotkey_failed: 'in use', s_data_started: 'Updating data…',
@@ -146,6 +146,13 @@ const STR = {
     s_off: 'Off', s_sec: '{0} s', s_min: '{0} min',
   },
 };
+
+// the interface size from the settings; the window's own size follows it on the app side
+function applyScale(z) {
+  z = Math.min(1.1, Math.max(0.8, +z || 1));
+  if (document.documentElement.style.zoom !== String(z)) document.documentElement.style.zoom = z;
+}
+applyScale(new URLSearchParams(location.search).get('z') || 1);
 
 let LANG = 'tr';
 function setLang(l) { LANG = STR[l] ? l : 'tr'; document.documentElement.lang = LANG; }

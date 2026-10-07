@@ -228,6 +228,7 @@ class SettingsTest(TempDirCase):
         self.assertEqual(back["hotkeys"]["reset"], "Alt+F5")
         self.assertEqual(back["hotkeys"]["fold"], "Ctrl+Shift+M")
         self.assertNotIn("nonsense", back.data)
+        self.assertEqual(back["scale"], 0.9)  # a settings file from before the size setting gets the smaller size
 
 
 class UserFolderTest(TempDirCase):

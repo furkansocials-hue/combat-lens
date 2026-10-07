@@ -19,6 +19,7 @@ from .winutil import Hotkeys, round_corners, set_clickthrough
 
 STRIP_H = 38
 RADIUS = 12          # the overlay's rounded corners, as in overlay.css
+SCALES = (0.8, 0.9, 1.0, 1.1)  # interface sizes offered in the settings
 PANEL_BG = "#111018"  # the overlay's own colour, behind the page while it loads
 _SAFE_URLS = ("https://npcap.com", "https://github.com/", "https://www.microsoft.com/")
 
@@ -93,7 +94,7 @@ class WebApp:
                          "npcap_error": self.npcap_error, "hotkeys": s["hotkeys"],
                          "analysis_open": self.analysis is not None, "version": __version__,
                          "just_updated": __version__ if self.just_updated else None, "keep_fight": s["keep_fight"],
-                         "faction": s["faction"], "region": s["region"]}
+                         "faction": s["faction"], "region": s["region"], "scale": self._scale()}
             return out
         if route == "timers":
             return dict(self.timers.state(), faction=s["faction"], region=s["region"])
@@ -183,11 +184,33 @@ class WebApp:
 
     def _apply_settings(self, values):
         old_keys = dict(self.settings["hotkeys"])
+        if "scale" in values:
+            try:
+                values["scale"] = min(max(SCALES), max(min(SCALES), float(values["scale"])))
+            except (TypeError, ValueError):
+                values.pop("scale")
         self.settings.update(values)
         if "opacity" in values:
             self._tune_overlay()
+        if "scale" in values and self.overlay is not None:
+            o = self.settings["overlay"]
+            self.overlay.resize(self._px(o["w"]), self._px(STRIP_H if self.settings["folded"] else o["h"]))
+            self._keep_overlay_on_screen()
         if self.settings["hotkeys"] != old_keys:
             self._start_hotkeys()
+
+    # The overlay's size is kept as at 100%; its window and everything in it are drawn `scale` of that.
+    def _scale(self):
+        try:
+            return min(max(SCALES), max(min(SCALES), float(self.settings["scale"])))
+        except (TypeError, ValueError):
+            return 1.0
+
+    def _px(self, v):
+        return int(round(v * self._scale()))
+
+    def _unscaled(self, v):
+        return int(round(v / self._scale()))
 
     def _win(self, name):
         return self.analysis if name == "analysis" else self.overlay
@@ -200,8 +223,8 @@ class WebApp:
             win.resize(max(w, 760), max(h, 480))
             return
         folded = self.settings["folded"]
-        h = STRIP_H if folded else max(h, 150)
-        win.resize(max(w, 280), h)
+        h = self._px(STRIP_H) if folded else max(h, self._px(150))
+        win.resize(max(w, self._px(280)), h)
 
     def _toggle_maximize(self, win):
         if win is None:
@@ -219,7 +242,8 @@ class WebApp:
         self.settings.update({"folded": on})
         if self.overlay is not None:
             o = self.settings["overlay"]
-            self.overlay.resize(o["w"], STRIP_H if on else o["h"], fix_point=FixPoint.SOUTH | FixPoint.WEST)
+            self.overlay.resize(self._px(o["w"]), self._px(STRIP_H if on else o["h"]),
+                                fix_point=FixPoint.SOUTH | FixPoint.WEST)
             if not on:
                 self._keep_overlay_on_screen()
 
@@ -247,11 +271,11 @@ class WebApp:
             self._geom_dirty = True
 
     def _on_resized(self, w, h):
-        round_corners(self._overlay_hwnd, RADIUS)
+        round_corners(self._overlay_hwnd, self._px(RADIUS))
         o = self.settings.data["overlay"]
-        o["w"] = w
-        if not self.settings["folded"] and h > STRIP_H + 20:
-            o["h"] = h
+        o["w"] = self._unscaled(w)
+        if not self.settings["folded"] and h > self._px(STRIP_H) + 20:
+            o["h"] = self._unscaled(h)
         self._geom_dirty = True
 
     def _on_analysis_resized(self, w, h):
@@ -283,7 +307,7 @@ class WebApp:
         # set the exact size once it is up, so the saved size does not shrink every start.
         w, h = self._want["overlay"]
         self.settings.data["overlay"].update(w=w, h=h)
-        self.overlay.resize(w, STRIP_H if self.settings["folded"] else h)
+        self.overlay.resize(self._px(w), self._px(STRIP_H if self.settings["folded"] else h))
         self._keep_overlay_on_screen()
         self._tune_overlay()
 
@@ -305,7 +329,7 @@ class WebApp:
             form = win.native
             form.Opacity = opacity
             self._overlay_hwnd = form.Handle.ToInt64()
-            round_corners(self._overlay_hwnd, RADIUS)
+            round_corners(self._overlay_hwnd, self._px(RADIUS))
             if self.clickthrough:
                 set_clickthrough(self._overlay_hwnd, True)
         try:
@@ -393,7 +417,7 @@ class WebApp:
             return
         a = self.settings["analysis"]
         self._want["analysis"] = (a["w"], a["h"])
-        url = self.server.url("analysis.html", id=fid or "")
+        url = self.server.url("analysis.html", id=fid or "", z=self._scale())
         x, y = self._centre_on_overlay_screen(a["w"], a["h"])
         win = webview.create_window(f"{APP_NAME} · Analiz", url, width=a["w"], height=a["h"], x=x, y=y,
                                     frameless=True, easy_drag=False, min_size=(760, 480), on_top=True,
@@ -508,14 +532,15 @@ class WebApp:
         if o["x"] is None or o["y"] is None:  # first run: top right, clear of the game's minimap
             try:
                 scr = webview.screens[0]
-                o["x"], o["y"] = scr.x + scr.width - o["w"] - 300, scr.y + 140
+                o["x"], o["y"] = scr.x + scr.width - self._px(o["w"]) - 300, scr.y + 140
             except Exception:
                 pass
         h = STRIP_H if s["folded"] else o["h"]
         self._want["overlay"] = (o["w"], o["h"])
-        self.overlay = webview.create_window(APP_NAME, self.server.url("overlay.html"), width=o["w"], height=h,
+        url = self.server.url("overlay.html", z=self._scale())  # the page is sized right from its first paint
+        self.overlay = webview.create_window(APP_NAME, url, width=self._px(o["w"]), height=self._px(h),
                                              x=o["x"], y=o["y"], frameless=True, easy_drag=False, on_top=True,
-                                             shadow=False, min_size=(280, 30), background_color=PANEL_BG)
+                                             shadow=False, min_size=(200, 24), background_color=PANEL_BG)
         self.overlay.events.shown += self._overlay_shown
         self.overlay.events.moved += self._on_moved
         self.overlay.events.resized += self._on_resized
