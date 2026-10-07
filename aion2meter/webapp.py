@@ -82,11 +82,11 @@ class WebApp:
         s = self.settings
         if route == "state":
             out = overlay_state(self, q.get("mode") or s["mode"], q.get("tab") or s["tab"], q.get("pin"),
-                                s["clear_after"])
+                                s["keep_fight"])
             out["ui"] = {"folded": s["folded"], "lang": s["lang"], "mode": s["mode"], "tab": s["tab"],
                          "opacity": s["opacity"], "welcomed": s["welcomed"], "label": self.label,
                          "npcap_error": self.npcap_error, "hotkeys": s["hotkeys"],
-                         "analysis_open": self.analysis is not None, "clear_after": s["clear_after"],
+                         "analysis_open": self.analysis is not None, "keep_fight": s["keep_fight"],
                          "faction": s["faction"], "region": s["region"]}
             return out
         if route == "timers":

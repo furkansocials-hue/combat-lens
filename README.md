@@ -20,7 +20,7 @@ Oyuna dokunmaz. Bilgisayarına gelen ağ paketlerini Npcap ile **sadece okur**: 
 ### Özellikler
 
 - **Oyunun üstünde şeffaf panel**: sınıf renkli satırlar, sınıf amblemleri, boss can çubuğu, **Ben / Parti** sekmeleri.
-- **Her boss bitince kendiliğinden sıfırlanır.** Biten savaş geçmişe kaydedilir, panel 30 saniye sonra temizlenir (ayarlardan 15 sn – 2 dk ya da kapalı).
+- **Her boss bitince kendiliğinden sıfırlanır.** Biten savaş geçmişe kaydedilir ve panelde 5 dakika kalır (ayarlardan 1–10 dk, ya da bir sonraki savaşa kadar).
 - **Boss ve Rift sayaçları** (🕒): 48 field boss'un çıkma geri sayımı ve sıradaki Space Rift portalı.
   - Yanında ölen field boss'u meter kendisi görür ve sayacı başlatır. Görmediklerini kurukafa ile işaretlersin.
   - Süreleri istersen boss boss değiştirebilirsin.

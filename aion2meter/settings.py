@@ -26,7 +26,7 @@ DEFAULTS = {
         "analysis": "Ctrl+Shift+D",
     },
     "welcomed": False,
-    "clear_after": 30,       # seconds a finished fight stays on the panel (0: until the next one)
+    "keep_fight": 300,       # seconds a finished fight stays on the panel (0: until the next one)
     "faction": "",           # Elyos / Asmodian: which field bosses the timers list shows
     "region": "eu",          # server region: the Spacetime Rift runs on its clock
 }

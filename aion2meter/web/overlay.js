@@ -302,7 +302,7 @@ function renderSettings() {
     <div class="set"><div class="lb"><div>${t('s_mode')}</div></div>
       <div class="seg" data-key="mode"><button data-v="all" class="${ui.mode === 'all' ? 'on' : ''}">${t('all_targets')}</button><button data-v="target" class="${ui.mode === 'target' ? 'on' : ''}">${t('main_target')}</button></div></div>
     <div class="set"><div class="lb"><div>${t('s_clear_after')}</div><small>${t('s_clear_after_sub')}</small></div>
-      <div class="seg" data-key="clear_after">${[0, 15, 30, 60, 120].map(v => `<button data-v="${v}" class="${ui.clear_after === v ? 'on' : ''}">${v ? (v < 60 ? t('s_sec', v) : t('s_min', v / 60)) : t('s_off')}</button>`).join('')}</div></div>
+      <div class="seg" data-key="keep_fight">${[60, 120, 300, 600, 0].map(v => `<button data-v="${v}" class="${ui.keep_fight === v ? 'on' : ''}">${v ? t('s_min', v / 60) : t('s_off')}</button>`).join('')}</div></div>
     <div class="set"><div class="lb"><div>${t('s_clickthrough')}</div><small>${t('s_clickthrough_sub')}</small></div>
       <label class="switch"><input type="checkbox" id="ct" ${S.status.clickthrough ? 'checked' : ''}><span></span></label></div>
     <div class="set" style="display:block"><div class="lb" style="margin-bottom:4px"><div>${t('s_hotkeys')}</div></div>${keyRows}</div>
@@ -315,7 +315,7 @@ function renderSettings() {
   box.innerHTML = html;
   box.querySelectorAll('.seg[data-key]').forEach(seg => seg.addEventListener('click', e => {
     const b = e.target.closest('button[data-v]');
-    if (b) act('settings', { values: { [seg.dataset.key]: seg.dataset.key === 'clear_after' ? +b.dataset.v : b.dataset.v } }).then(refresh);
+    if (b) act('settings', { values: { [seg.dataset.key]: seg.dataset.key === 'keep_fight' ? +b.dataset.v : b.dataset.v } }).then(refresh);
   }));
   let opTimer = null;
   $('op').addEventListener('input', e => {

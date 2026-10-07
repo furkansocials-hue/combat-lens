@@ -70,7 +70,7 @@ const STR = {
     b_unk: 'Bilinmiyor', b_due: 'Çıkıyor', b_up: 'Çıkmış olmalı', b_died: 'Öldü: {0}',
     b_killed_btn: 'Şimdi öldü olarak işaretle', b_clear: 'Sayacı sıfırla', b_cycle: 'Çıkma süresi: değiştirmek için tıkla (dakika)',
     b_source: 'Süreler Global Season 1 için, öldükten sonra sayılır (kaynak: AION 2 Guides). Meter yanında ölen bossu kendisi görür; görmediklerini kurukafa ile işaretle.',
-    s_clear_after: 'Savaş bitince paneli temizle', s_clear_after_sub: 'Biten savaş geçmişe yazılır, panel sıfırdan başlar.',
+    s_clear_after: 'Biten savaş panelde kalsın', s_clear_after_sub: 'Süre dolunca panel temizlenir; savaş geçmişte kayıtlı kalır. Kapalı: bir sonraki savaşa kadar kalır.',
     s_off: 'Kapalı', s_sec: '{0} sn', s_min: '{0} dk',
   },
   en: {
@@ -120,7 +120,7 @@ const STR = {
     b_unk: 'Unknown', b_due: 'Spawning', b_up: 'Should be up', b_died: 'died {0}',
     b_killed_btn: 'Mark as killed now', b_clear: 'Clear the timer', b_cycle: 'Respawn time: click to change (minutes)',
     b_source: 'Times are for Global Season 1, counted from the kill (source: AION 2 Guides). The meter sees a boss die near you by itself; mark the others with the skull.',
-    s_clear_after: 'Clear the panel after a fight', s_clear_after_sub: 'The fight is saved to history and the panel starts from zero.',
+    s_clear_after: 'Keep a finished fight on the panel', s_clear_after_sub: 'Then the panel clears; the fight stays in history. Off: it stays until the next fight.',
     s_off: 'Off', s_sec: '{0} s', s_min: '{0} min',
   },
 };
