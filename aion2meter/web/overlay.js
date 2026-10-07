@@ -243,9 +243,10 @@ function renderRows(st, v) {
     set(el, 'nm', r.name + (r.is_local ? '*' : ''), () => {
       el.querySelector('.nm').innerHTML = `<span>${esc(r.name)}</span>` + (r.is_local ? `<span class="pill me">${t('you')}</span>` : '');
     });
-    const sub = [c.name !== '?' ? c.name : null, t('crit') + ' ' + fmtPct((r.crit_rate || 0) * 100, 0),
+    const heal = r.heal ? `<span class="hl">♥ ${fmtNum(r.heal)} · ${fmtNum(r.hps)}/s</span>` : null;
+    const sub = [c.name !== '?' ? esc(c.name) : null, heal, r.total ? t('crit') + ' ' + fmtPct((r.crit_rate || 0) * 100, 0) : null,
       r.combat_power ? 'CP ' + fmtNum(r.combat_power) : null].filter(Boolean).join(' · ');
-    txt(el.querySelector('.sub'), sub);
+    html(el.querySelector('.sub'), sub);
     txt(el.querySelector('.amt'), fmtNum(r.total));  // total damage leads, DPS under it
     const rateEl = el.querySelector('.rate');
     set(el, 'rate', r.dps, () => { rateEl.innerHTML = `${fmtNum(r.dps)}<small>/s</small>`; });

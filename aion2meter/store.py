@@ -1111,6 +1111,31 @@ class Store:
                     "players": per_player,
                 })
 
+            heals, heal_rids = self._resolve_heals(enc, group_of, merge, local_rid, local_name)
+            for k, entry in heals.items():
+                if k in players or k in merge:
+                    continue
+                job = next((j for j in (job_from_skill(code) for code, _ in entry["skills"]) if j), None)
+                if job is None:
+                    continue  # potions and items only: nothing says this is a player
+                rids = heal_rids.get(k, set())
+                name = None if k.startswith("#") else k
+                member = self.roster.get(name) if name else None
+                is_local = local_rid in rids or (local_name is not None and k == local_name)
+                if in_a_party:
+                    in_party = bool(is_local or (name and name in party_names) or rids & party_entities)
+                else:
+                    in_party = True
+                players[k] = {
+                    "key": k,
+                    "name": name or k,
+                    "job": job,
+                    "is_local": is_local,
+                    "in_party": in_party,
+                    "combat_power": (member or {}).get("combat_power", 0),
+                    "level": (member or {}).get("level"),
+                }
+
             # A row without a class is not a player (unless it is you).
             return {
                 "id": enc.id,
@@ -1122,20 +1147,22 @@ class Store:
                 "targets": targets,
                 "party_known": in_a_party,
                 "zone": enc.zone,
-                "heals": self._resolve_heals(enc, group_of, merge, local_rid, local_name),
+                "heals": heals,
                 "local_known": bool(local_keys),
                 "local_name": local_name,
             }
 
     def _resolve_heals(self, enc, group_of, merge, local_rid, local_name):
-        """{player key: {"total", "skills": {(code, is_hot): SkillAgg}}} for the fight's healers."""
+        """({player key: {"total", "skills": {(code, is_hot): SkillAgg}}}, {player key: entity ids})."""
         out = {}
+        rids = {}
         for actor, book in enc.heals.items():
+            rid = self.resolve(actor)
             k = group_of.get(actor)
             if k is None:
-                rid = self.resolve(actor)
                 k = self.nicknames.get(rid) or (local_name if rid == local_rid else None) or f"#{rid}"
             k = merge.get(k, k)
+            rids.setdefault(k, set()).add(rid)
             entry = out.setdefault(k, {"total": 0, "skills": {}})
             for key, h in book.items():
                 agg = entry["skills"].get(key)
@@ -1143,7 +1170,7 @@ class Store:
                     agg = entry["skills"][key] = SkillAgg()
                 agg.absorb(h)
                 entry["total"] += h.total
-        return out
+        return out, rids
 
     def view(self, enc):
         return enc.frozen if enc.frozen is not None else self.resolve_encounter(enc)

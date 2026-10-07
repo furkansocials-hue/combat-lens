@@ -79,6 +79,7 @@ body { display: flex; flex-direction: column; height: 100vh; border: 1px solid #
 .pt .bar i { position: absolute; left: 0; top: 50%; height: 6px; margin-top: 7px; border-radius: 4px; opacity: .85; }
 .pt .bar span { position: relative; }
 .pt .dps { font-weight: 800; }
+.pt td.heal { color: #7ff0b4; font-weight: 700; }
 
 /* summary tiles */
 .sum { padding: 4px 14px 14px; display: grid; grid-template-columns: repeat(3, 1fr); gap: 8px; }

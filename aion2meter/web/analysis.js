@@ -263,6 +263,7 @@ function renderHead() {
 
 function renderParty() {
   const top = Math.max(1, ...D.players.map(p => p.total));
+  const anyHeal = D.players.some(p => p.heal);
   $('pt-sub').textContent = `${fmtNum(D.total_dps)} DPS · ${fmtNum(D.total)}`;
   const rows = D.players.map((p, i) => {
     const c = cls(p.job);
@@ -273,9 +274,10 @@ function renderParty() {
       <td class="bar num"><span>${fmtNum(p.total)}</span><i style="width:${(p.total / top * 100).toFixed(1)}%;right:auto;background:linear-gradient(90deg,${c.color},${c.color}55)"></i></td>
       <td class="dps num">${fmtNum(p.dps)}</td>
       <td class="num" style="color:${c.color};font-weight:700">${fmtPct(p.pct)}</td>
-      <td class="num muted">${fmtPct((p.crit_rate || 0) * 100)}</td></tr>`;
+      <td class="num muted">${fmtPct((p.crit_rate || 0) * 100)}</td>
+      ${anyHeal ? `<td class="num heal" title="${p.heal ? fmtNum(p.hps) + '/s' : ''}">${p.heal ? fmtNum(p.heal) : '<span class="dim">—</span>'}</td>` : ''}</tr>`;
   }).join('');
-  const html = `<table class="pt"><thead><tr><th></th><th>${t('player')}</th><th>${t('total')}</th><th>DPS</th><th>${t('share')}</th><th>${t('crit')}</th></tr></thead><tbody>${rows}</tbody></table>`;
+  const html = `<table class="pt"><thead><tr><th></th><th>${t('player')}</th><th>${t('total')}</th><th>DPS</th><th>${t('share')}</th><th>${t('crit')}</th>${anyHeal ? `<th>${t('heal_col')}</th>` : ''}</tr></thead><tbody>${rows}</tbody></table>`;
   const box = $('pt');
   if (box.dataset.h === html) return;
   box.dataset.h = html;

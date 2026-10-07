@@ -1,12 +1,43 @@
 """JSON payloads for the web UI: the overlay's live state, a fight's full analysis, the history."""
 import os
 
+from .gamedata import job_from_skill
 from .history import day_label
 from .report import MODE_ALL, MODE_TARGET, build_view, row_summary, skill_rows, visible_rows
 
 HEAL_MIN = 100  # largest single heal below this: a status record, not a heal
+HEALERS = ("CL", "CH")  # their healing is shown next to their damage
 ROW_FIELDS = ("key", "name", "job", "is_local", "in_party", "total", "dps", "dps_own", "dps_fight", "pct",
-              "crit_rate", "combat_power", "level", "hits", "active_ms")
+              "crit_rate", "combat_power", "level", "hits", "active_ms", "heal", "hps")
+
+
+def _counts_as_heal(code, h, job):
+    """A heal of the healer's own class skills: potions and items, and the odd record booked to the
+    wrong caster, stay out. Tiny values are stack counts and buff ticks, not heals."""
+    return h.max >= HEAL_MIN and (job is None or job_from_skill(code) == job)
+
+
+def _heal_of(resolved, key, job=None):
+    entry = resolved.get("heals", {}).get(key)
+    if not entry:
+        return 0
+    return sum(h.total for (code, _), h in entry["skills"].items() if _counts_as_heal(code, h, job))
+
+
+def _rows_with_healers(view, resolved):
+    """The group's damage rows, plus Clerics and Chanters who only healed; healers get heal and HPS."""
+    rows = visible_rows(view, "party")
+    keys = {r["key"] for r in rows}
+    for k, p in resolved["players"].items():
+        if k in keys or not p.get("in_party") or p.get("job") not in HEALERS or not _heal_of(resolved, k, p["job"]):
+            continue
+        rows.append(dict(p, total=0, dps=0, dps_own=0, dps_fight=0, pct=0.0, crit_rate=0.0, hits=0, active_ms=0,
+                         seconds=view["seconds"], skills={}, by_target={}, buckets={}, first=0, last=0))
+    for r in rows:
+        heal = _heal_of(resolved, r["key"], r["job"]) if r.get("job") in HEALERS else 0
+        r["heal"] = heal
+        r["hps"] = heal / r["seconds"] if heal else 0
+    return rows
 
 
 def _icon(kind_url):
@@ -71,7 +102,7 @@ def overlay_state(app, mode, tab, pinned, clear_after_s=0):
         enc = newest
     resolved = st.view(enc)
     view = build_view(resolved, _mode(mode))
-    group = visible_rows(view, "party")
+    group = _rows_with_healers(view, resolved)
     rows = [r for r in group if r["is_local"]] if tab == "me" else group
     out["view"] = dict(_view_head(view, enc.frozen is None),
                        rows=[{k: r.get(k) for k in ROW_FIELDS} for r in rows],
@@ -100,8 +131,8 @@ def encounter_detail(app, fid, mode):
         resolved, live = app.store.view(encs[0]), encs[0].frozen is None
     gd = app.gd
     view = build_view(resolved, _mode(mode))
-    rows = visible_rows(view, "party")
-    t0 = min((min(r.get("buckets", {}) or [0]) for r in rows), default=0)
+    rows = _rows_with_healers(view, resolved)
+    t0 = min((min(r["buckets"]) for r in rows if r.get("buckets")), default=0)
     players = []
     for r in rows:
         summ = row_summary(r, gd)
@@ -113,11 +144,13 @@ def encounter_detail(app, fid, mode):
             skills.append(sk)
         heal = resolved.get("heals", {}).get(r["key"])
         heals = []
+        own = r["job"] if r.get("job") in HEALERS else None  # a healer's list matches their total
         if heal:
             for (code, hot), h in sorted(heal["skills"].items(), key=lambda kv: -kv[1].total):
-                if h.max < HEAL_MIN:
-                    continue  # stack counts and buff ticks, not healing
-                heals.append({"name": (gd.skill_name(code) or f"Skill {code}") + (" (HoT)" if hot else ""),
+                if not _counts_as_heal(code, h, own):
+                    continue
+                name = gd.skill_name(code) or gd.skill_name(gd.normalize_skill_id(code)) or f"Skill {code}"
+                heals.append({"name": name + (" (HoT)" if hot else ""),
                               "icon": _icon(gd.icon_for(code)), "total": h.total, "hits": h.hits, "max": h.max})
         buckets = r.get("buckets", {})
         players.append(dict(

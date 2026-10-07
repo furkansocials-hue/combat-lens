@@ -157,6 +157,29 @@ class ApiTest(TempDirCase):
         self.assertEqual([i["start"] for i in items], sorted((i["start"] for i in items), reverse=True))
 
 
+class HealerTest(TempDirCase):
+    def test_clerics_and_chanters_show_their_own_class_heals(self):
+        store, proc = new()
+        for eid, name in ((5123, "Corin"), (6000, "Mirae"), (6100, "Velka")):
+            store.append_nickname_authoritative(eid, name)
+        store.set_local_identity(5123, "Corin")
+        store.set_party_roster([("Corin", {"job": "GL"}), ("Mirae", {"job": "CL"}), ("Velka", {"job": "CL"})], True, 0)
+        for t in range(0, 11, 2):
+            store.now = t * 1000
+            proc.consume_stream(packet(damage_record(9001, 5123, 11020010, 3000)))
+            proc.consume_stream(packet(damage_record(9001, 6000, 17010010, 1000)))
+            store.append_heal(6000, 17080010, 2000)   # a Cleric heal
+            store.append_heal(6000, 1000010, 500)     # a potion: not a class skill
+            store.append_heal(5123, 1000010, 800)     # the Gladiator's potion
+            store.append_heal(6100, 17080010, 1500)   # a Cleric who only heals
+        rows = {r["name"]: r for r in overlay_state(_App(store, History(self.dir)), "all", "party", None)["view"]["rows"]}
+        self.assertEqual(rows["Mirae"]["heal"], 6 * 2000)
+        self.assertAlmostEqual(rows["Mirae"]["hps"], 6 * 2000 / 10)
+        self.assertEqual(rows["Corin"]["heal"], 0)
+        self.assertIn("Velka", rows)  # never hit anything, still on the list
+        self.assertEqual((rows["Velka"]["total"], rows["Velka"]["heal"]), (0, 6 * 1500))
+
+
 class ServerTest(unittest.TestCase):
     def setUp(self):
         store, _ = new()

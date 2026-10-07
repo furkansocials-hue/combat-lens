@@ -69,7 +69,7 @@ const STR = {
     star: 'Favorilere ekle', unstar: 'Favorilerden çıkar', del: 'Sil', del_confirm: 'Bu savaş geçmişten silinsin mi?',
     shared_time: 'Parti süresi', own_time: 'Kişisel süre', dead: 'öldü', hp: 'Can',
     end_boss: 'boss öldü', end_idle: 'zaman aşımı', end_reset: 'sıfırlandı', end_zone: 'bölge değişti', end_paused: 'durduruldu',
-    dot_tag: 'DoT', ticks: 'tik', of_party: 'partinin', players_n: '{0} oyuncu', open_world: 'Açık dünya',
+    heal_col: 'Heal', dot_tag: 'DoT', ticks: 'tik', of_party: 'partinin', players_n: '{0} oyuncu', open_world: 'Açık dünya',
     timers: 'Boss ve Rift sayaçları', rift: 'Space Rift', rift_next: 'sonraki', rift_open: 'açık',
     rift_at: 'Saat {0} (sunucu {1})', rift_later: 'Sonra', domination: 'Domination',
     rift_soon_note: 'Space Rift {0} sonra açılıyor', rift_open_note: 'Space Rift açık: girişin kapanmasına {0}',
@@ -127,7 +127,7 @@ const STR = {
     star: 'Add to favorites', unstar: 'Remove from favorites', del: 'Delete', del_confirm: 'Delete this fight from history?',
     shared_time: 'Party time', own_time: 'Own time', dead: 'dead', hp: 'HP',
     end_boss: 'boss down', end_idle: 'idle', end_reset: 'reset', end_zone: 'zone change', end_paused: 'paused',
-    dot_tag: 'DoT', ticks: 'ticks', of_party: 'of party', players_n: '{0} players', open_world: 'Open world',
+    heal_col: 'Heal', dot_tag: 'DoT', ticks: 'ticks', of_party: 'of party', players_n: '{0} players', open_world: 'Open world',
     timers: 'Boss and Rift timers', rift: 'Spacetime Rift', rift_next: 'next', rift_open: 'open',
     rift_at: 'At {0} (server {1})', rift_later: 'Later', domination: 'Domination',
     rift_soon_note: 'Spacetime Rift opens in {0}', rift_open_note: 'Spacetime Rift is open: entrance closes in {0}',
@@ -369,6 +369,11 @@ async function renderShareCard(d) {
     g.fillText(_fit(g, p.name, 240), 78, y + 16);
     g.fillStyle = '#b3aec8'; g.font = `500 11px ${F}`;
     g.fillText(cls(p.job).name + (p.is_local ? '  ·  ' + t('you') : ''), 78, y + 29);
+    if (p.heal) {
+      const cx = 78 + g.measureText(cls(p.job).name + (p.is_local ? '  ·  ' + t('you') : '') + '  ').width;
+      g.fillStyle = '#7ff0b4'; g.font = `700 11px ${F}`;
+      g.fillText('♥ ' + fmtNum(p.heal), cx, y + 29);
+    }
     g.textAlign = 'right';
     g.fillStyle = '#fff'; g.font = `800 15px ${F}`; g.fillText(fmtNum(p.dps), W - 150, y + 22);
     g.fillStyle = '#c9c5da'; g.font = `600 12px ${F}`; g.fillText(fmtNum(p.total), W - 84, y + 22);
@@ -407,7 +412,7 @@ function shareText(d) {
   const lines = ps.map((p, i) => [
     String(i + 1).padStart(2) + '.', p.name.padEnd(nw), cls(p.job).name.padEnd(12),
     (fmtNum(p.dps) + ' DPS').padStart(12), fmtNum(p.total).padStart(8), fmtPct(p.pct).padStart(7),
-  ].join(' '));
+  ].join(' ') + (p.heal ? `  heal ${fmtNum(p.heal)}` : ''));
   return head + '\n```\n' + lines.join('\n') + '\n```\n' + `${t('party')} DPS ${fmtNum(d.total_dps)} · ${fmtNum(d.total)} — ${APP_NAME}`;
 }
 
