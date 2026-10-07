@@ -234,6 +234,7 @@ class Store:
         self.paused = False  # "Durdur": damage is not counted; names are still learned
         self.on_end = None  # called with each finished fight (the app keeps them on disk)
         self.on_kill = None  # called with the NPC code of each mob seen dying (field boss timers)
+        self.on_field_bosses = None  # called with (world, entries, ms) for each field boss list the game sends
         self.last_damage_ts = NEVER
         self.last_zone_reset = NEVER
         self.generation = 0
@@ -331,6 +332,13 @@ class Store:
 
     def is_boss(self, eid):
         return eid in self.bosses or eid in self.boss_like
+
+    def note_field_bosses(self, world, entries):
+        if self.on_field_bosses is not None:
+            try:
+                self.on_field_bosses(world, entries, self.now)
+            except Exception:
+                pass
 
     def mark_dead(self, eid):
         with self.lock:

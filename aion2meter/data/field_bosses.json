@@ -1,9 +1,13 @@
 {
- "note": "Global Season 1 field bosses. Respawn counts from the kill. Cycles: couga54 AION 2 Guides (checked in game, global runs at half of the Korean notice), last checked 2026-10-04.",
+ "note": "Global Season 1 field bosses. Respawn counts from the kill. Cycles: couga54 AION 2 Guides, last checked 2026-10-04; the Elyos Dartan, Lagta, Gartua and Demiros cycles corrected on 2026-10-08 from the game's own field boss list, which showed longer waits than those. The game numbers a world's bosses world*100+n in the order of their NPC codes (checked in Verteron, world 1010; Altgard 2010 assumed).",
  "sources": [
   "https://couga54.github.io/aion2-guides/en/bosses/",
   "https://www.aion2timers.com/world-boss-timer/"
  ],
+ "worlds": {
+  "1010": "Elyos",
+  "2010": "Asmodian"
+ },
  "rift": {
   "hours": [
    2,
@@ -172,7 +176,7 @@
    "region": "Verteron",
    "zone": "Artamia Plateau",
    "level": 45,
-   "respawn_min": 120
+   "respawn_min": 240
   },
   {
    "code": 2100718,
@@ -226,7 +230,7 @@
    "region": "Verteron",
    "zone": "Artamia Plateau South",
    "level": 48,
-   "respawn_min": 180
+   "respawn_min": 360
   },
   {
    "code": 2101122,
@@ -244,7 +248,7 @@
    "region": "Verteron",
    "zone": "Red Forest",
    "level": 48,
-   "respawn_min": 360
+   "respawn_min": 720
   },
   {
    "code": 2101074,
@@ -253,7 +257,7 @@
    "region": "Verteron",
    "zone": "Isle of Eternity",
    "level": 51,
-   "respawn_min": 360
+   "respawn_min": 720
   },
   {
    "code": 2400017,

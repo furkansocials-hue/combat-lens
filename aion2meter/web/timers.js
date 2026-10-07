@@ -1,5 +1,6 @@
 'use strict';
 /* The overlay's timers screen: field boss respawns and the Spacetime Rift clock.
+   A boss the game's own list covers shows the game's time; the others count from their kill.
    Server times are turned into the player's own time with Intl, so daylight saving stays right. */
 
 let TM = null;        // /api/timers
@@ -71,11 +72,12 @@ function cycleText(min) {
 
 const WINDOW_MS = 10 * 60000;  // a boss comes back inside about ten minutes after its cycle ends
 function bossState(b, now) {
-  if (b.killed == null) return 'unk';
+  if (b.live && b.live.up) return 'on';  // the game says it is up
+  if (b.due == null) return 'unk';
   if (now < b.due) return 'cd';
   return now < b.due + WINDOW_MS ? 'due' : 'up';
 }
-const STATE_ORDER = { due: 0, cd: 1, up: 2, unk: 3 };
+const STATE_ORDER = { due: 0, cd: 1, on: 2, up: 3, unk: 4 };
 
 /* rows screen: a line while a rift is about to open or open */
 function renderRiftNote() {
@@ -98,7 +100,9 @@ function renderTimers() {
     || a.cycle_min - b.cycle_min || a.name.localeCompare(b.name));
   const rifts = riftTimes(TM.rift, tz, now, 4);
   // the parts that change only now and then are drawn once; the countdowns are updated in place below
-  const key = JSON.stringify([LANG, fac, S.ui.region, tmEdit, rifts[0], bosses.map(b => [b.code, b.st, b.due, b.cycle_min])]);
+  const seen = TM.live_seen && TM.live_seen[fac];
+  const key = JSON.stringify([LANG, fac, S.ui.region, tmEdit, rifts[0], seen && Math.floor(seen / 60000),
+    bosses.map(b => [b.code, b.st, b.due, b.cycle_min, b.live && b.live.at])]);
   if (box.dataset.key !== key) {
     box.dataset.key = key;
     const regions = Object.keys(TM.regions).map(r => `<option value="${r}"${r === S.ui.region ? ' selected' : ''}>${t('reg_' + r)}</option>`).join('');
@@ -108,8 +112,10 @@ function renderTimers() {
         ? `<input class="tb-in num" type="number" min="1" max="10080" value="${b.cycle_min}" data-in="${b.code}"> ${t('min_short')}`
         : `<button class="tb-cyc${b.custom ? ' custom' : ''}" data-cyc="${b.code}" title="${t('b_cycle')}">${cycleText(b.cycle_min)}</button>`;
       const status = b.st === 'cd'
-        ? `<div class="tb-cd num" data-cd="${b.due}"></div><div class="tb-at">${clockIn(b.due)}</div>`
-        : `<div class="tb-cd">${t('b_' + b.st)}</div>${b.killed != null ? `<div class="tb-at">${t('b_died', clockIn(b.killed))}</div>` : ''}`;
+        ? `<div class="tb-cd num" data-cd="${b.due}"></div><div class="tb-at">${clockIn(b.due)}${b.live ? ' · ' + t('b_game') : ''}</div>`
+        : b.st === 'on'
+          ? `<div class="tb-cd">${t('b_on')}</div><div class="tb-at">${t('b_on_at', clockIn(b.live.at))}</div>`
+          : `<div class="tb-cd">${t('b_' + b.st)}</div>${b.killed != null ? `<div class="tb-at">${t('b_died', clockIn(b.killed))}</div>` : ''}`;
       return `<div class="tb-row ${b.st}">
         <div class="tb-who"><div class="tb-n">${esc(b.name)}</div><div class="tb-s">${esc(b.zone)} · Lv ${b.level} · ${cyc}</div></div>
         <div class="tb-st">${status}</div>
@@ -130,7 +136,7 @@ function renderTimers() {
         <select id="tb-reg" title="${t('region')}">${regions}</select>
       </div>
       <div class="tb-list">${rows}</div>
-      <div class="tb-note">${t('b_source')}</div>`;
+      <div class="tb-note">${seen ? t('b_live_seen', clockIn(seen)) + ' ' : ''}${t('b_source')}</div>`;
     box.querySelector('#tb-fac').onclick = e => {
       const b = e.target.closest('button[data-v]');
       if (!b) return;

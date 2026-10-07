@@ -104,6 +104,58 @@ def u16le(b, off):
     return b[off] | (b[off + 1] << 8)
 
 
+def u64le(b, off):
+    return int.from_bytes(b[off:off + 8], "little")
+
+
+# ───────────────────────── field boss list ─────────────────────────
+
+def _epoch_ms_at(b, off):
+    """The u64 at `off` read as a time between 2017 and 2096, or None."""
+    if off + 8 > len(b):
+        return None
+    v = u64le(b, off)
+    return v if 1_500_000_000_000 <= v <= 4_000_000_000_000 else None
+
+
+def parse_field_boss_list(pkt):
+    """The game's field boss list for one world, the one its map shows "Time Left" from.
+
+        <len> 01 91 00 00 <u32 world> <count>
+              { <up> <spawn id varint> [<x y z floats> [<1 byte>]] <u64 epoch ms> } * count
+
+    A spawn id is `world * 100 + n`. The time is when the boss came up while `up` is 1, and when it
+    comes back while it is 0. Returns (world, [(n, up, ms), ...]) or None.
+    """
+    _, o = read_varint(pkt, 0)
+    if o <= 0 or len(pkt) < o + 9 or pkt[o] != 0x01 or pkt[o + 1] != 0x91 or pkt[o + 2] or pkt[o + 3]:
+        return None
+    world = u32le(pkt, o + 4)
+    count = pkt[o + 8]
+    off = o + 9
+    if not world or not count:
+        return None
+    entries = []
+    for _ in range(count):
+        if off >= len(pkt) or pkt[off] > 1:
+            return None
+        up = pkt[off] == 1
+        sid, n = read_varint(pkt, off + 1)
+        if n <= 0 or sid // 100 != world:
+            return None
+        off += 1 + n
+        if up:
+            off += 12
+            if _epoch_ms_at(pkt, off) is None:
+                off += 1  # some spawned bosses carry one more byte here
+        ms = _epoch_ms_at(pkt, off)
+        if ms is None:
+            return None
+        entries.append((sid % 100, up, ms))
+        off += 8
+    return world, entries
+
+
 # ───────────────────────── names ─────────────────────────
 
 NAME_FIELD_MIN, NAME_FIELD_MAX = 1, 48
@@ -517,6 +569,7 @@ class StreamProcessor:
         self.parse_party_scope_packet(pkt)
         self.parse_death_packet(pkt)
         self.parse_zone_change_packet(pkt)
+        self.parse_field_boss_packet(pkt)
         if not (parsed_damage or parsed_summon or parsed_ownership or parsed_hp):
             self.parse_dot_packet(pkt)
         return parsed_damage
@@ -623,6 +676,14 @@ class StreamProcessor:
         if pkt[o] == 0x23 and pkt[o + 1] == 0x36 and pkt[o + 2] == 0x00:
             self.store.note_zone_load()
             self.store.note_zone_change()
+
+    def parse_field_boss_packet(self, pkt):
+        o = self._opcode_at(pkt)
+        if o < 0 or o + 1 >= len(pkt) or pkt[o] != 0x01 or pkt[o + 1] != 0x91:
+            return
+        found = parse_field_boss_list(pkt)
+        if found is not None:
+            self.store.note_field_bosses(*found)
 
     def parse_death_packet(self, pkt):
         # `<len> 42 36 <entity> <0> <flag>`; flag 3 = died in combat.

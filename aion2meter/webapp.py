@@ -51,8 +51,10 @@ class WebApp:
         self._geom_dirty = False
         store.on_end = self._on_fight_end
         self.timers = BossTimers()
+        self._logged_worlds = set()
         if not label:  # a demo or a recording must not start real respawn timers
             store.on_kill = self._on_kill
+            store.on_field_bosses = self._on_field_bosses
         self.server = UIServer(self).start()
 
     # ───────── fights → history ─────────
@@ -71,6 +73,12 @@ class WebApp:
         # called under the store's lock: the file write goes to its own thread
         if self.timers.is_field_boss(code):
             threading.Thread(target=self.timers.note_kill, args=(code,), name="boss-kill", daemon=True).start()
+
+    def _on_field_bosses(self, world, entries, ms):
+        # the game's own field boss list, every few seconds while you are in a field world
+        if not self.timers.note_list(world, entries, ms) and (world, len(entries)) not in self._logged_worlds:
+            self._logged_worlds.add((world, len(entries)))
+            self.log(f"bilinmeyen boss listesi: dünya {world}, {len(entries)} boss")
 
     # ───────── HTTP API ─────────
 
