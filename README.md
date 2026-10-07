@@ -57,6 +57,8 @@ Oyuna dokunmaz. Bilgisayarına gelen ağ paketlerini Npcap ile **sadece okur**: 
 
 Oyun açıkken birkaç saniye içinde paneldeki nokta yeşile döner ("Bağlı").
 
+**İlk kullanımda:** meter açıkken bir kez teleport ol ya da bölge değiştir; oyun karakterinin adını sadece yükleme ekranında gönderiyor. Sonra hep hatırlanır.
+
 ### Kullanım
 
 | | |
@@ -108,6 +110,7 @@ Kendi kaydında da aynı testi yapabilirsin: `python tools\validate_hp.py kayitl
 - **Sen**:
   - Oyun karakter kaydını bölge yüklemesinde gönderir; meter seni oradan tanır.
   - Meter'ı oyunun ortasında açtıysan, vurmaya başladıktan yaklaşık 1 saniye sonra sadece yerel oyuncuya gelen HP kaydından seni bulur.
+  - Adın ise sadece bir yükleme ekranında gelir. İlk kullanımda `#numara` görünürse meter açıkken bir kez teleport ol ya da bölge değiştir. Adın kaydedilir, sonraki açılışlarda hemen görünür.
 - **Partideyken**:
   - Oyun parti listesini sadece bir şey değiştiğinde gönderir.
   - Liste gelmediyse meter partiyi **parti haritası işaretlerinden** anlar. Her işaretin kime ait olduğunu, işaretle oyuncunun hareket paketindeki konumu eşleştirerek bulur.
@@ -186,6 +189,7 @@ It never touches the game: it only **reads** the network traffic arriving at you
 1. Install [Npcap](https://npcap.com/#download) with *WinPcap API-compatible Mode*. Its licence does not allow bundling it.
 2. Download `CombatLens.exe` from [Releases](https://github.com/furkansocials-hue/combat-lens/releases/latest) and run it (the zip next to it is the same app as a folder).
 3. Play in windowed or borderless mode.
+4. On first use, teleport or change zone once with the meter open: the game sends your character name only on a loading screen. It is remembered after that.
 
 **Accuracy**
 

@@ -165,6 +165,8 @@ function renderNotices(st) {
   const out = [];
   if (st.clickthrough) out.push(`<div class="note info">${ic('pointer')}<span class="grow">${esc(t('clickthrough_on', hk('clickthrough')))}</span></div>`);
   if (st.paused) out.push(`<div class="note">${ic('pause')}<span class="grow">${t('paused')}</span><button data-op="pause">${t('resume')}</button></div>`);
+  // you are known (by your entity) but not by name: the game sends it only on a loading screen
+  if (st.local && st.local.startsWith('#') && !S.ui.label) out.push(`<div class="note info">${ic('user')}<span class="grow">${t('name_unknown')}</span></div>`);
   const html = out.join('');
   const box = $('notices');
   if (box.dataset.h !== html) {
