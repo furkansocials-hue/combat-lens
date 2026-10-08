@@ -87,7 +87,7 @@ def overlay_state(app, mode, tab, pinned, clear_after_s=0):
         "view": None,
         "nav": None,
         "applicants": [{"id": str(a["id"]), "name": a["name"], "job": a["job"], "level": a["level"],
-                        "combat_power": a["combat_power"], "waited_ms": a["waited_ms"]}
+                        "combat_power": a["combat_power"], "gear_score": a["gear_score"], "waited_ms": a["waited_ms"]}
                        for a in st.pending_applicants()],
     }
     encs = st.encounters()

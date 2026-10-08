@@ -522,6 +522,7 @@ class PartyFinder(unittest.TestCase):
         got = store.pending_applicants()
         self.assertEqual([(a["name"], a["job"], a["level"], a["combat_power"], a["server_id"]) for a in got],
                          [("Varnis", "TE", 45, 73701, 1307), ("Kelda", "SO", 45, 81000, 1307)])
+        self.assertEqual([a["gear_score"] for a in got], [1446, 1446])
         store.now = 5000
         self.assertEqual([a["waited_ms"] for a in store.pending_applicants()], [4000, 3000])
 
