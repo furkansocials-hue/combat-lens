@@ -162,7 +162,7 @@ def parse_party_application(pkt):
     """Someone asks to join the party you listed. The game shows these one at a time; the server
     sends each as it comes.
 
-        <len> 07 97 <party varint> 00 <u64 character> <u32 class> <u32 level> <u32 gear score>
+        <len> 07 97 <u32 party> <u64 character> <u32 class> <u32 level> <u32 gear score>
               <name> <u16 server> <4 bytes> <u64 combat power> <1 byte> <u64 epoch ms>
 
     The character id carries the server in its top 16 bits, as in the party roster.
@@ -172,10 +172,7 @@ def parse_party_application(pkt):
     n = len(pkt)
     if o <= 0 or o + 2 > n or pkt[o] != 0x07 or pkt[o + 1] != 0x97:
         return None
-    _, k = read_varint(pkt, o + 2)
-    if k <= 0:
-        return None
-    o += 2 + k + 1
+    o += 2 + 4
     if o + 21 > n:
         return None
     dbid = u64le(pkt, o)
