@@ -121,6 +121,7 @@ BOSS_MIN_HP = 1_000_000
 BOSS_HP_RATIO = 40
 BOSS_MIN_SAMPLES = 8
 BOSS_SWITCH_MS = 15_000  # a boss not hit for this long no longer holds the fight together
+APPLICANT_TTL_MS = 10 * 60_000  # a join request nobody answered is gone from the game by then
 AMBIGUOUS = object()  # a position key seen for two different members / entities
 
 
@@ -235,6 +236,7 @@ class Store:
         self.on_end = None  # called with each finished fight (the app keeps them on disk)
         self.on_kill = None  # called with the NPC code of each mob seen dying (field boss timers)
         self.on_field_bosses = None  # called with (world, entries, ms) for each field boss list the game sends
+        self.applicants = {}  # character id -> a request to join your listed party, until it is answered
         self.last_damage_ts = NEVER
         self.last_zone_reset = NEVER
         self.generation = 0
@@ -332,6 +334,22 @@ class Store:
 
     def is_boss(self, eid):
         return eid in self.bosses or eid in self.boss_like
+
+    def note_party_application(self, app):
+        with self.lock:
+            self.applicants.pop(app["id"], None)  # asking again puts them at the back, as in the game
+            self.applicants[app["id"]] = dict(app, seen=self.now)
+
+    def note_application_closed(self, char_id):
+        with self.lock:
+            self.applicants.pop(char_id, None)
+
+    def pending_applicants(self):
+        """The requests still waiting, first come first; old ones the game has surely dropped go."""
+        with self.lock:
+            for k in [k for k, a in self.applicants.items() if self.now - a["seen"] > APPLICANT_TTL_MS]:
+                del self.applicants[k]
+            return [dict(a, waited_ms=max(0, self.now - a["seen"])) for a in self.applicants.values()]
 
     def note_field_bosses(self, world, entries):
         if self.on_field_bosses is not None:

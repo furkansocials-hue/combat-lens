@@ -499,6 +499,50 @@ class Reassembly(unittest.TestCase):
         self.assertEqual(out[1:], [b"zz", b"yy"])
 
 
+def application(name, char, server=1307, cls=9, level=45, cp=73701, party=80593):
+    """`07 97`: a request to join your listed party, laid out as the game sends it."""
+    dbid = (server << 48) | char
+    nm = name.encode()
+    return packet(b"\x07\x97" + varint(party) + b"\x00" + dbid.to_bytes(8, "little") + u32(cls) + u32(level)
+                  + u32(1446) + bytes([len(nm)]) + nm + server.to_bytes(2, "little") + b"\x00" * 4
+                  + cp.to_bytes(8, "little") + b"\x01" + (1_791_414_721_371).to_bytes(8, "little"))
+
+
+def answered(char, server=1307):
+    return packet(b"\x16\x97" + ((server << 48) | char).to_bytes(8, "little") + b"\x01")
+
+
+class PartyFinder(unittest.TestCase):
+    def test_every_request_is_listed_first_come_first(self):
+        store, proc = new()
+        store.now = 1000
+        proc.consume_stream(application("Varnis", 1001))
+        store.now = 2000
+        proc.consume_stream(application("Kelda", 1002, cls=0x1a, cp=81000))
+        got = store.pending_applicants()
+        self.assertEqual([(a["name"], a["job"], a["level"], a["combat_power"], a["server_id"]) for a in got],
+                         [("Varnis", "TE", 45, 73701, 1307), ("Kelda", "SO", 45, 81000, 1307)])
+        store.now = 5000
+        self.assertEqual([a["waited_ms"] for a in store.pending_applicants()], [4000, 3000])
+
+    def test_an_answered_request_leaves_and_a_new_one_goes_to_the_back(self):
+        store, proc = new()
+        for i, name in enumerate(("Varnis", "Kelda", "Orrin")):
+            proc.consume_stream(application(name, 1001 + i))
+        proc.consume_stream(answered(1001))
+        proc.consume_stream(application("Kelda", 1002))  # asked again
+        self.assertEqual([a["name"] for a in store.pending_applicants()], ["Orrin", "Kelda"])
+        proc.consume_stream(answered(1002, server=1302))  # someone else's id: nothing changes
+        self.assertEqual(len(store.pending_applicants()), 2)
+
+    def test_an_old_request_goes_by_itself(self):
+        store, proc = new()
+        store.now = 0
+        proc.consume_stream(application("Varnis", 1001))
+        store.now = 11 * 60_000
+        self.assertEqual(store.pending_applicants(), [])
+
+
 class Varint(unittest.TestCase):
     def test_roundtrip(self):
         for v in (0, 1, 127, 128, 300, 16384, 2 ** 28 - 1, 99_999_999):

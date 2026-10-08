@@ -156,6 +156,53 @@ def parse_field_boss_list(pkt):
     return world, entries
 
 
+# ───────────────────────── party finder ─────────────────────────
+
+def parse_party_application(pkt):
+    """Someone asks to join the party you listed. The game shows these one at a time; the server
+    sends each as it comes.
+
+        <len> 07 97 <party varint> 00 <u64 character> <u32 class> <u32 level> <u32 gear score>
+              <name> <u16 server> <4 bytes> <u64 combat power> <1 byte> <u64 epoch ms>
+
+    The character id carries the server in its top 16 bits, as in the party roster.
+    """
+    from .gamedata import job_from_roster_class
+    _, o = read_varint(pkt, 0)
+    n = len(pkt)
+    if o <= 0 or o + 2 > n or pkt[o] != 0x07 or pkt[o + 1] != 0x97:
+        return None
+    _, k = read_varint(pkt, o + 2)
+    if k <= 0:
+        return None
+    o += 2 + k + 1
+    if o + 21 > n:
+        return None
+    dbid = u64le(pkt, o)
+    cls, level, gear = u32le(pkt, o + 8), u32le(pkt, o + 12), u32le(pkt, o + 16)
+    o += 20
+    ln = pkt[o]
+    name = exact_name(pkt[o + 1:o + 1 + ln]) if o + 1 + ln <= n else None
+    if name is None or not 1 <= level <= 200:
+        return None
+    o += 1 + ln
+    combat_power = None
+    if o + 14 <= n and u16le(pkt, o) == dbid >> 48:
+        combat_power = u64le(pkt, o + 6)
+        if combat_power > 100_000_000:
+            combat_power = None
+    return {"id": dbid, "name": name, "job": job_from_roster_class(cls), "level": level,
+            "gear_score": gear, "combat_power": combat_power, "server_id": dbid >> 48}
+
+
+def parse_application_closed(pkt):
+    """`<len> 16 97 <u64 character> <status>`: an application was answered or withdrawn."""
+    _, o = read_varint(pkt, 0)
+    if o <= 0 or o + 11 > len(pkt) or pkt[o] != 0x16 or pkt[o + 1] != 0x97:
+        return None
+    return u64le(pkt, o + 2)
+
+
 # ───────────────────────── names ─────────────────────────
 
 NAME_FIELD_MIN, NAME_FIELD_MAX = 1, 48
@@ -570,6 +617,7 @@ class StreamProcessor:
         self.parse_death_packet(pkt)
         self.parse_zone_change_packet(pkt)
         self.parse_field_boss_packet(pkt)
+        self.parse_party_finder_packet(pkt)
         if not (parsed_damage or parsed_summon or parsed_ownership or parsed_hp):
             self.parse_dot_packet(pkt)
         return parsed_damage
@@ -684,6 +732,19 @@ class StreamProcessor:
         found = parse_field_boss_list(pkt)
         if found is not None:
             self.store.note_field_bosses(*found)
+
+    def parse_party_finder_packet(self, pkt):
+        o = self._opcode_at(pkt)
+        if o < 0 or o + 1 >= len(pkt) or pkt[o + 1] != 0x97:
+            return
+        if pkt[o] == 0x07:
+            found = parse_party_application(pkt)
+            if found is not None:
+                self.store.note_party_application(found)
+        elif pkt[o] == 0x16:
+            closed = parse_application_closed(pkt)
+            if closed is not None:
+                self.store.note_application_closed(closed)
 
     def parse_death_packet(self, pkt):
         # `<len> 42 36 <entity> <0> <flag>`; flag 3 = died in combat.
