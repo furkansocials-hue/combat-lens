@@ -494,9 +494,19 @@ class Reassembly(unittest.TestCase):
         r = Reassembler()
         r.push(0, b"aa", 0)
         r.push(10, b"zz", 1)
-        out = r.push(12, b"yy", 1000)
+        out = r.push(12, b"yy", 5000)
         self.assertIs(out[0], Reassembler.RESET)
         self.assertEqual(out[1:], [b"zz", b"yy"])
+        self.assertEqual((r.gaps, r.skipped), (1, 8))
+
+    def test_a_segment_the_server_resends_late_still_fills_its_hole(self):
+        r = Reassembler()
+        r.push(0, b"aa", 0)
+        for i in range(200):  # a busy fight goes on behind the lost segment
+            self.assertEqual(r.push(4 + 2 * i, b"cc", 5 * i), [])
+        out = r.push(2, b"bb", 1200)  # resent after the server's retransmit timeout
+        self.assertEqual(b"".join(out), b"bb" + b"cc" * 200)
+        self.assertEqual(r.gaps, 0)
 
 
 class Varint(unittest.TestCase):

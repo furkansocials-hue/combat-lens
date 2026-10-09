@@ -23,8 +23,12 @@ LOOPBACK_GRACE_MS = 2_500
 ACTIVE_SILENT_SWITCH_MS = 5_000
 FLOW_PRUNE_MS = 60_000
 MAX_ACC = 2 * 1024 * 1024
-OOO_MAX_SEGMENTS = 64
-OOO_MAX_WAIT_MS = 400
+# A segment lost on the way comes again when the server's TCP resends it, often after its 300 ms
+# minimum timeout and longer when that is lost too. The game waits for it; so must the meter, or
+# everything in the hole (and the frames cut by it) is gone for good.
+OOO_MAX_SEGMENTS = 4096
+OOO_MAX_WAIT_MS = 3_000
+GAP_LOG_EVERY_MS = 10_000
 
 TCP_FIN, TCP_SYN, TCP_RST = 0x01, 0x02, 0x04
 _MASK32 = 0xFFFFFFFF
@@ -54,6 +58,7 @@ class Reassembler:
         self.pending = {}  # seq -> (payload, ts)
         self.retransmitted = 0
         self.gaps = 0
+        self.skipped = 0  # bytes given up on
 
     def push(self, seq, payload, ts):
         out = []
@@ -69,6 +74,7 @@ class Reassembler:
                 # The missing bytes are not coming (capture drop): skip the hole.
                 self.gaps += 1
                 first = min(self.pending, key=lambda s: _sdiff(s, self.next_seq))
+                self.skipped += _sdiff(first, self.next_seq)
                 self.next_seq = first
                 out.append(self.RESET)
                 self._drain(out)
@@ -144,6 +150,7 @@ class Dispatcher:
             os.makedirs(os.path.dirname(os.path.abspath(record_path)), exist_ok=True)
             self._record = open(record_path, "a", encoding="ascii", buffering=1)
         self._last_prune = 0
+        self._gaps_logged = (0, 0, 0)  # gaps, bytes, when
 
     # ----- capture side (any thread) -----
 
@@ -183,6 +190,9 @@ class Dispatcher:
             now = time.monotonic()
             if now - last_tick >= 0.5:
                 last_tick = now
+                f = self.flows.get(self.active) if self.active is not None else None
+                if f is not None:
+                    self._log_gaps(f.reasm, self.clock)  # the holes not yet told
                 with self.store.lock:
                     self.store.now = max(self.store.now, int(time.time() * 1000))
                     self.store.tick()
@@ -263,8 +273,20 @@ class Dispatcher:
         for chunk in f.reasm.push(seq, payload, ts):
             if chunk is Reassembler.RESET:
                 f.acc.clear()
+                self._log_gaps(f.reasm, ts)
                 continue
             self.feed_chunk(f, ts, chunk)
+
+    def _log_gaps(self, reasm, ts):
+        """Holes in the game stream mean damage the meter never saw: say so in the log, at most every
+        few seconds."""
+        gaps, skipped, when = self._gaps_logged
+        if reasm.gaps < gaps:
+            gaps = skipped = 0  # a new connection
+        if reasm.gaps == gaps or ts - when < GAP_LOG_EVERY_MS:
+            return
+        self.log(f"oyun verisinde boşluk: {reasm.gaps - gaps} kez, {reasm.skipped - skipped} bayt gelmedi")
+        self._gaps_logged = (reasm.gaps, reasm.skipped, ts)
 
     def feed_chunk(self, f, ts, chunk):
         self.game_bytes += len(chunk)

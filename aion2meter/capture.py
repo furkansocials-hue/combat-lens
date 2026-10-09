@@ -7,6 +7,7 @@ import ctypes as C
 import os
 import struct
 import threading
+import time
 
 DEFAULT_FILTER = b"tcp and not port 443 and not port 80"
 
@@ -47,6 +48,10 @@ class _timeval(C.Structure):
 
 class _pkthdr(C.Structure):
     _fields_ = [("ts", _timeval), ("caplen", C.c_uint32), ("len", C.c_uint32)]
+
+
+class _pcap_stat(C.Structure):
+    _fields_ = [("ps_recv", C.c_uint), ("ps_drop", C.c_uint), ("ps_ifdrop", C.c_uint), ("bs_capt", C.c_uint)]
 
 
 class _bpf_program(C.Structure):
@@ -90,6 +95,8 @@ def _load():
     lib.pcap_close.argtypes = [C.c_void_p]
     lib.pcap_geterr.argtypes = [C.c_void_p]
     lib.pcap_geterr.restype = C.c_char_p
+    lib.pcap_stats.argtypes = [C.c_void_p, C.POINTER(_pcap_stat)]
+    lib.pcap_stats.restype = C.c_int
     if hasattr(lib, "pcap_setbuff"):
         lib.pcap_setbuff.argtypes = [C.c_void_p, C.c_int]
         lib.pcap_setbuff.restype = C.c_int
@@ -242,7 +249,13 @@ class Capture:
         hdr = C.POINTER(_pkthdr)()
         data = C.POINTER(C.c_ubyte)()
         sink = self.sink
+        stat, dropped, checked = _pcap_stat(), 0, time.monotonic()
         while self.running:
+            if time.monotonic() - checked >= 10:  # packets Npcap could not hand over in time
+                checked = time.monotonic()
+                if L.pcap_stats(h, C.byref(stat)) == 0 and stat.ps_drop > dropped:
+                    self.log(f"Npcap paket kaçırdı ({label}): {stat.ps_drop - dropped}")
+                    dropped = stat.ps_drop
             r = L.pcap_next_ex(h, C.byref(hdr), C.byref(data))
             if r == 1:
                 hd = hdr.contents
