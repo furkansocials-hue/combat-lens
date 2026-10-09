@@ -21,23 +21,6 @@ STRIP_H = 38
 RADIUS = 12          # the overlay's rounded corners, as in overlay.css
 SCALES = (0.8, 0.9, 1.0, 1.1)  # interface sizes offered in the settings
 PANEL_BG = "#111018"  # the overlay's own colour, behind the page while it loads
-CHIME = ((880, 150), (1175, 150), (1568, 300))  # Hz, ms: the boss alert's sound
-
-
-def _chime(times):
-    """Play the alert sound `times` times, without holding up the caller."""
-    def play():
-        try:
-            import winsound
-            for _ in range(times):
-                for freq, ms in CHIME:
-                    winsound.Beep(freq, ms)
-                time.sleep(0.3)
-        except Exception:
-            pass
-    threading.Thread(target=play, name="chime", daemon=True).start()
-
-
 _SAFE_URLS = ("https://npcap.com", "https://github.com/", "https://www.microsoft.com/")
 
 
@@ -67,7 +50,6 @@ class WebApp:
         self._want = {}  # window -> (w, h) asked for, restored once the window is up
         self._overlay_hwnd = None
         self._geom_dirty = False
-        self._alerted = set()          # (code, due, soon) already sounded
         self._alerts_closed = set()    # (code, due, soon) the player closed
         store.on_end = self._on_fight_end
         self.timers = BossTimers()
@@ -316,21 +298,10 @@ class WebApp:
         return [a for a in self.timers.alerts(self.settings["boss_alerts"])
                 if (a["code"], a["at"], a["stage"] == "soon") not in self._alerts_closed]
 
-    def _sound_alerts(self):
-        for a in self.boss_alerts():
-            key = (a["code"], a["at"], a["stage"] == "soon")
-            if key not in self._alerted:
-                self._alerted.add(key)
-                _chime(1 if a["stage"] == "soon" else 3)
-
     def _housekeeping(self):
         last_check = time.time()
         while True:
             time.sleep(2)
-            try:
-                self._sound_alerts()
-            except Exception as e:
-                self.log(f"boss uyarısı: {e!r}")
             if time.time() - last_check > 6 * 3600:  # a long session hears about a new release too
                 last_check = time.time()
                 self._check_updates()

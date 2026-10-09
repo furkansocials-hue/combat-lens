@@ -297,8 +297,8 @@ function renderFooter(st, v) {
   }
 }
 
-/* field bosses with their bell on (timers screen), about to come back: a line on top of every screen
-   with the time left, until it is closed or the boss is ten minutes past its time; the app plays a sound */
+/* field bosses with their bell on (timers screen), about to come back: a blinking red line on top of
+   every screen with the time left, until it is closed or the boss is ten minutes past its time */
 function alertText(a) {
   return a.stage === 'soon' ? t('alert_soon', a.name, dur(a.at - Date.now())) : t('alert_' + a.stage, a.name);
 }

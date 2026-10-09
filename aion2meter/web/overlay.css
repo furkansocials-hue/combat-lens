@@ -43,17 +43,17 @@ body { padding: 0; }
 
 /* notices */
 .balerts { display: flex; flex-direction: column; gap: 5px; margin: 0 8px 6px; flex: none; }
-.balert { display: flex; align-items: center; gap: 8px; padding: 7px 6px 7px 10px; border-radius: 9px; color: #fff; font-size: 12.5px; font-weight: 700;
-  background: linear-gradient(90deg, rgba(255, 181, 71, .3), rgba(255, 181, 71, .1)); border: 1px solid rgba(255, 181, 71, .6); }
-.balert > svg { width: 17px; height: 17px; stroke: var(--warn); fill: none; stroke-width: 2; flex: none; }
+/* a boss alert has to be seen over a fight: big, red and blinking (faster once the boss is due) */
+.balert { display: flex; align-items: center; gap: 10px; padding: 10px 8px 10px 12px; border-radius: 10px; color: #fff; font-size: 15px; font-weight: 800;
+  background: #e5243b; border: 2px solid #ff8592; animation: balert 1s steps(1, end) infinite; }
+.balert.due, .balert.up { animation-duration: .5s; }
+.balert > svg { width: 22px; height: 22px; stroke: #fff; fill: none; stroke-width: 2.2; flex: none; }
 .balert .grow { flex: 1; min-width: 0; }
-.balert .ba-z { font-size: 10.5px; font-weight: 600; opacity: .75; margin-top: 1px; }
-.balert.due, .balert.up { background: linear-gradient(90deg, rgba(46, 230, 197, .34), rgba(155, 107, 255, .24)); border-color: rgba(46, 230, 197, .8);
-  animation: balert 0.9s ease-in-out infinite alternate; }
-.balert.due > svg, .balert.up > svg { stroke: var(--accent-2); }
-@keyframes balert { from { box-shadow: 0 0 0 0 rgba(46, 230, 197, 0); } to { box-shadow: 0 0 16px 2px rgba(46, 230, 197, .6); } }
-.strip.alerting { border-color: var(--warn); }
-.strip.alerting #s-name { color: var(--warn); }
+.balert .ba-z { font-size: 11.5px; font-weight: 700; opacity: .9; margin-top: 2px; }
+.balert .ib { color: #fff; }
+@keyframes balert { 0% { background: #e5243b; box-shadow: 0 0 18px 3px rgba(255, 60, 80, .75); } 50% { background: #5c0f19; box-shadow: none; } }
+.strip.alerting { border-color: #ff4d5e; animation: balert 1s steps(1, end) infinite; }
+.strip.alerting #s-name { color: #fff; }
 .notices { display: flex; flex-direction: column; gap: 4px; margin: 0 8px; flex: none; }
 .notices:not(:empty) { margin-bottom: 6px; }
 .note { display: flex; align-items: center; gap: 7px; font-size: 11.5px; font-weight: 600; padding: 5px 9px; border-radius: 8px; background: rgba(255, 181, 71, .1); color: #ffd08a; border: 1px solid rgba(255, 181, 71, .22); }
