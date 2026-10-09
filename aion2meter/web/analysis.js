@@ -299,7 +299,7 @@ function renderSummary() {
   const secs = p.dps ? p.total / p.dps : 0;
   const html = [
     tile('DPS', fmtNum(p.dps), (D.shared_time ? t('shared_time') : t('own_time')) + ' · ' + fmtTime(secs * 1000), true),
-    tile(t('total'), fmtNum(p.total), fmtFull(p.total), true),
+    tile(t('total'), fmtFull(p.total), '', true),
     tile(t('share'), fmtPct(p.pct), t('of_party'), true),
     tile(t('hits'), fmtFull(s.direct_hits), s.dot_ticks ? `+ ${fmtFull(s.dot_ticks)} ${t('dot_tag')} ${t('ticks')}` : ''),
     tile(t('crit'), fmtPct(s.crit)),
@@ -311,7 +311,7 @@ function renderSummary() {
     tile(t('parry'), fmtPct(s.parry)),
     tile(t('smite'), fmtPct(s.smite)),
     tile(t('dot'), fmtNum(s.dot_total), p.total ? fmtPct(s.dot_total / p.total * 100) : ''),
-    tile(t('heal'), fmtNum(p.heal_total), ''),
+    p.heal ? tile(t('heal'), fmtFull(p.heal_total), '') : '',  // Clerics and Chanters: the game counts no one else's
     tile(t('skills'), String(s.skills), ''),
   ].join('');
   const box = $('sum');
@@ -342,7 +342,8 @@ function renderSkills() {
   const body = skills.map(s => {
     const cells = cols.slice(1).map(c => {
       if (c.k === 'total') {
-        return `<td class="tt num"><div class="l"><b>${fmtNum(s.total)}</b><small>${fmtPct(s.pct)}</small></div>
+        const tip = s.dot_total ? ` title="${esc(t('with_dot', fmtFull(s.dot_total), fmtFull(s.dot_ticks)))}"` : '';
+        return `<td class="tt num"${tip}><div class="l"><b>${fmtFull(s.total)}</b><small>${fmtPct(s.pct)}</small></div>
           <div class="b"><i style="width:${(s.total / topTotal * 100).toFixed(1)}%;background:linear-gradient(90deg,${color},${color}66)"></i></div></td>`;
       }
       const v = skillVal(s, c.k);

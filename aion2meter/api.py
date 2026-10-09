@@ -17,6 +17,25 @@ def _counts_as_heal(code, h, job):
     return h.max >= HEAL_MIN and (job is None or job_from_skill(code) == job)
 
 
+def _fold_ticks(skills):
+    """A skill's damage over time goes into the skill's own row, as in the game's Combat Analysis: its
+    total and share grow, the hit count and hit tags stay the direct hits'. Ticks of a skill never hit
+    directly keep their own row."""
+    direct = {s["code"]: s for s in skills if not s["is_dot"]}
+    out = []
+    for s in skills:
+        own = direct.get(s["code"]) if s["is_dot"] else None
+        if own is None:
+            out.append(s)
+            continue
+        own["dot_total"] = own.get("dot_total", 0) + s["total"]
+        own["dot_ticks"] = own.get("dot_ticks", 0) + s["hits"]
+        for k in ("total", "pct", "dps"):
+            own[k] += s[k]
+    out.sort(key=lambda s: -s["total"])
+    return out
+
+
 def _heal_of(resolved, key, job=None):
     entry = resolved.get("heals", {}).get(key)
     if not entry:
@@ -142,6 +161,7 @@ def encounter_detail(app, fid, mode):
             sk["icon"] = _icon(sk["icon"])
             sk.pop("key", None)
             skills.append(sk)
+        skills = _fold_ticks(skills)
         heal = resolved.get("heals", {}).get(r["key"])
         heals = []
         own = r["job"] if r.get("job") in HEALERS else None  # a healer's list matches their total

@@ -140,6 +140,19 @@ class ApiTest(TempDirCase):
         self.assertTrue(all(isinstance(sk["icon"], str) for sk in corin["skills"]))
         json.dumps(d)  # everything the page gets is plain JSON
 
+    def test_a_skill_s_ticks_are_in_its_own_row_as_in_the_game(self):
+        store, proc = new()
+        store.append_nickname_authoritative(5123, "Corin")
+        store.set_local_identity(5123, "Corin")
+        store.now = 1000
+        store.append_damage(5123, 9001, 15200010, 1000)
+        store.append_damage(5123, 9001, 15200010, 300, is_dot=True)
+        store.append_damage(5123, 9001, 15200010, 300, is_dot=True)
+        corin = encounter_detail(_App(store, History(self.dir)), store.current.id, "all")["players"][0]
+        (row,) = corin["skills"]
+        self.assertEqual((row["total"], row["hits"], row["dot_total"], row["dot_ticks"]), (1600, 1, 600, 2))
+        self.assertAlmostEqual(row["pct"], 100.0)
+
     def test_history_lists_live_saved_and_unsaved_fights_once(self):
         store, proc = new()
         h = History(self.dir)

@@ -106,7 +106,7 @@ body { display: flex; flex-direction: column; height: 100%; border: 1px solid #2
 .sk .nm { display: flex; align-items: center; gap: 8px; text-align: left; max-width: 180px; }
 .sk .nm span { overflow: hidden; text-overflow: ellipsis; font-weight: 600; }
 .sk .nm .pill { flex: none; padding: 0 5px; font-size: 9.5px; }
-.sk .tt { min-width: 118px; }
+.sk .tt { min-width: 132px; }
 .sk .tt .l { display: flex; justify-content: flex-end; gap: 8px; align-items: baseline; }
 .sk .tt .l b { font-weight: 800; }
 .sk .tt .l small { color: var(--text-3); font-size: 10.5px; width: 40px; text-align: right; }
