@@ -81,6 +81,23 @@ class TimersTest(unittest.TestCase):
         t.clear(KERNON)
         self.assertIsNone(next(b for b in t.state()["bosses"] if b["code"] == KERNON)["killed"])
 
+    def test_an_alerted_boss_is_announced_before_and_after_it_is_due(self):
+        t = BossTimers(kills_path=self.path)
+        t.note_kill(GARTUA, 0)
+        due = 12 * 3600_000
+        stages = lambda now: [(a["code"], a["stage"], a["at"]) for a in t.alerts([GARTUA, KERNON], now)]
+        self.assertEqual(stages(due - 11 * 60_000), [])
+        self.assertEqual(stages(due - 9 * 60_000), [(GARTUA, "soon", due)])
+        self.assertEqual(stages(due + 60_000), [(GARTUA, "due", due)])
+        self.assertEqual(stages(due + 11 * 60_000), [])  # Kernon: no kill seen, no time to announce
+
+    def test_the_game_s_list_saying_it_is_up_is_announced_as_up(self):
+        t = BossTimers(kills_path=self.path)
+        n = t.worlds[VERTERON].index(GARTUA) + 1
+        t.note_list(VERTERON, [(i, i == n, NOW - 60_000 if i == n else NOW + 3600_000) for i in range(1, 25)], NOW)
+        self.assertEqual([(a["stage"], a["at"]) for a in t.alerts([GARTUA], NOW)], [("up", NOW - 60_000)])
+        self.assertEqual(t.alerts([GARTUA], NOW + 11 * 60_000), [])  # up a while: no longer news
+
 
 def _party(store):
     store.append_nickname_authoritative(5123, "Corin")

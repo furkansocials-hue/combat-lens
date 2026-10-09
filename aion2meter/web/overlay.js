@@ -128,6 +128,7 @@ function render() {
   $('b-timers').classList.toggle('on', screen === 'timers');
   document.querySelectorAll('#tabs button').forEach(b => b.classList.toggle('on', b.dataset.tab === tab));
   if (S.ui.just_updated && !updatedShown) { updatedShown = true; toast(t('updated_to', S.ui.just_updated)); }
+  renderAlerts();
   if (folded) return renderStrip();
 
   const updating = st.updating;
@@ -296,6 +297,29 @@ function renderFooter(st, v) {
   }
 }
 
+/* field bosses with their bell on (timers screen), about to come back: a line on top of every screen
+   with the time left, until it is closed or the boss is ten minutes past its time; the app plays a sound */
+function alertText(a) {
+  return a.stage === 'soon' ? t('alert_soon', a.name, dur(a.at - Date.now())) : t('alert_' + a.stage, a.name);
+}
+function renderAlerts() {
+  const list = S.alerts || [];
+  const box = $('balerts');
+  box.classList.toggle('hidden', !list.length || S.ui.folded);
+  const key = JSON.stringify(list.map(a => [a.code, a.at, a.stage]));
+  if (box.dataset.key !== key) {
+    box.dataset.key = key;
+    box.innerHTML = list.map((a, i) => `<div class="balert ${a.stage}">${ic('bell')}
+      <div class="grow"><div class="ba-t" data-i="${i}"></div><div class="ba-z">${esc(a.zone)} · ${clockIn(a.at)}</div></div>
+      <button class="ib" data-i="${i}" title="${t('close')}">${ic('x')}</button></div>`).join('');
+    box.querySelectorAll('button[data-i]').forEach(b => b.onclick = () => {
+      const a = list[+b.dataset.i];
+      act('boss_alert_close', { code: a.code, at: a.at, stage: a.stage }).then(refresh);
+    });
+  }
+  box.querySelectorAll('.ba-t').forEach(el => txt(el, alertText(list[+el.dataset.i])));
+}
+
 function renderStrip() {
   const v = S.view;
   const up = S.status.updating;
@@ -304,7 +328,9 @@ function renderStrip() {
     txt($('s-time'), '');
     return;
   }
-  txt($('s-name'), v ? titleOf(v) : (S.status.locked ? t('waiting_fight') : t('waiting_game')));
+  const alert = (S.alerts || [])[0];
+  $('strip').classList.toggle('alerting', !!alert);
+  txt($('s-name'), alert ? alertText(alert) : v ? titleOf(v) : (S.status.locked ? t('waiting_fight') : t('waiting_game')));
   txt($('s-time'), v ? fmtTime(v.duration_ms) : '');
   let val = '';
   if (v) {

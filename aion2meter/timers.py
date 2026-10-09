@@ -16,6 +16,8 @@ DATA_PATH = resource("data", "field_bosses.json")
 KILLS_PATH = user_path("boss_sayaclari.json")
 SAVE_EVERY_MS = 5 * 60_000   # the game's list comes every few seconds; the file is kept fresh this often
 LEARN_GAP_MS = 30_000        # a boss seen up, then gone in the next list: killed in between
+ALERT_LEAD_MS = 10 * 60_000  # an alerted boss is announced this long before it is due
+ALERT_HOLD_MS = 10 * 60_000  # and stays announced this long after: it comes back within about that
 
 
 class BossTimers:
@@ -116,18 +118,44 @@ class BossTimers:
                 self.cycles[code] = min(minutes, 7 * 24 * 60)
             self._save()
 
+    def _due(self, code):
+        """(cycle, killed, due, live) of a boss; live only while the game's list is newer than the kill."""
+        cycle = self.cycles.get(code) or self.learned.get(code) or self.bosses[code]["respawn_min"]
+        killed = self.kills.get(code)
+        due = killed + cycle * 60_000 if killed is not None else None
+        live = self.live.get(code)
+        if live is not None and (killed is None or live["seen"] >= killed):
+            due = None if live["up"] else live["at"]  # the game's own word, newer than the kill
+        else:
+            live = None
+        return cycle, killed, due, live
+
+    def alerts(self, codes, now_ms=None):
+        """The bosses in `codes` about to come back or just back, soonest first. stage: "soon" (due
+        within ALERT_LEAD_MS), "due" (its time has come) or "up" (the game's list says it is up)."""
+        now = int(now_ms if now_ms is not None else time.time() * 1000)
+        out = []
+        with self.lock:
+            for code in codes:
+                if code not in self.bosses:
+                    continue
+                _, _, due, live = self._due(code)
+                if live is not None and live["up"]:
+                    at, stage = live["at"], "up"
+                elif due is not None:
+                    at, stage = due, "soon" if now < due else "due"
+                else:
+                    continue
+                if at - ALERT_LEAD_MS <= now < at + ALERT_HOLD_MS:
+                    b = self.bosses[code]
+                    out.append({"code": code, "name": b["name"], "zone": b["zone"], "at": at, "stage": stage})
+        return sorted(out, key=lambda a: a["at"])
+
     def state(self):
         with self.lock:
             rows = []
             for code, b in self.bosses.items():
-                cycle = self.cycles.get(code) or self.learned.get(code) or b["respawn_min"]
-                killed = self.kills.get(code)
-                due = killed + cycle * 60_000 if killed is not None else None
-                live = self.live.get(code)
-                if live is not None and (killed is None or live["seen"] >= killed):
-                    due = None if live["up"] else live["at"]  # the game's own word, newer than the kill
-                else:
-                    live = None
+                cycle, killed, due, live = self._due(code)
                 rows.append(dict(b, cycle_min=cycle, custom=code in self.cycles, learned=code in self.learned,
                                  killed=killed, due=due, live=live))
             seen = {self.bosses[codes[0]]["faction"]: self.live_seen[w]

@@ -21,6 +21,23 @@ STRIP_H = 38
 RADIUS = 12          # the overlay's rounded corners, as in overlay.css
 SCALES = (0.8, 0.9, 1.0, 1.1)  # interface sizes offered in the settings
 PANEL_BG = "#111018"  # the overlay's own colour, behind the page while it loads
+CHIME = ((880, 150), (1175, 150), (1568, 300))  # Hz, ms: the boss alert's sound
+
+
+def _chime(times):
+    """Play the alert sound `times` times, without holding up the caller."""
+    def play():
+        try:
+            import winsound
+            for _ in range(times):
+                for freq, ms in CHIME:
+                    winsound.Beep(freq, ms)
+                time.sleep(0.3)
+        except Exception:
+            pass
+    threading.Thread(target=play, name="chime", daemon=True).start()
+
+
 _SAFE_URLS = ("https://npcap.com", "https://github.com/", "https://www.microsoft.com/")
 
 
@@ -50,6 +67,8 @@ class WebApp:
         self._want = {}  # window -> (w, h) asked for, restored once the window is up
         self._overlay_hwnd = None
         self._geom_dirty = False
+        self._alerted = set()          # (code, due, soon) already sounded
+        self._alerts_closed = set()    # (code, due, soon) the player closed
         store.on_end = self._on_fight_end
         self.timers = BossTimers()
         self._logged_worlds = set()
@@ -89,6 +108,7 @@ class WebApp:
             out = overlay_state(self, q.get("mode") or s["mode"], q.get("tab") or s["tab"], q.get("pin"),
                                 s["keep_fight"])
             out["status"]["updating"] = None if self.updater.state["stage"] == "idle" else self.updater.state
+            out["alerts"] = self.boss_alerts()
             out["ui"] = {"folded": s["folded"], "lang": s["lang"], "mode": s["mode"], "tab": s["tab"],
                          "opacity": s["opacity"], "welcomed": s["welcomed"], "label": self.label,
                          "npcap_error": self.npcap_error, "hotkeys": s["hotkeys"],
@@ -97,7 +117,7 @@ class WebApp:
                          "faction": s["faction"], "region": s["region"], "scale": self._scale()}
             return out
         if route == "timers":
-            return dict(self.timers.state(), faction=s["faction"], region=s["region"])
+            return dict(self.timers.state(), faction=s["faction"], region=s["region"], alerts=s["boss_alerts"])
         if route == "encounter":
             d = encounter_detail(self, q.get("id"), q.get("mode") or s["mode"])
             return d if d is not None else NOT_FOUND
@@ -154,6 +174,14 @@ class WebApp:
             self.timers.note_kill(int(body.get("code", 0)))
         elif op == "boss_clear":
             self.timers.clear(int(body.get("code", 0)))
+        elif op == "boss_alert":
+            code = int(body.get("code", 0))
+            codes = [c for c in self.settings["boss_alerts"] if c != code]
+            if body.get("on") and self.timers.is_field_boss(code):
+                codes.append(code)
+            self.settings.update({"boss_alerts": codes})
+        elif op == "boss_alert_close":
+            self._alerts_closed.add((int(body.get("code", 0)), int(body.get("at", 0)), body.get("stage") == "soon"))
         elif op == "boss_cycle":
             self.timers.set_cycle(int(body.get("code", 0)), int(body.get("minutes", 0)))
         elif op == "check_update":
@@ -283,10 +311,26 @@ class WebApp:
             self.settings.data["analysis"].update(w=w, h=h)
             self._geom_dirty = True
 
+    def boss_alerts(self):
+        """The alerted bosses about to spawn or just spawned, without the ones the player closed."""
+        return [a for a in self.timers.alerts(self.settings["boss_alerts"])
+                if (a["code"], a["at"], a["stage"] == "soon") not in self._alerts_closed]
+
+    def _sound_alerts(self):
+        for a in self.boss_alerts():
+            key = (a["code"], a["at"], a["stage"] == "soon")
+            if key not in self._alerted:
+                self._alerted.add(key)
+                _chime(1 if a["stage"] == "soon" else 3)
+
     def _housekeeping(self):
         last_check = time.time()
         while True:
             time.sleep(2)
+            try:
+                self._sound_alerts()
+            except Exception as e:
+                self.log(f"boss uyarısı: {e!r}")
             if time.time() - last_check > 6 * 3600:  # a long session hears about a new release too
                 last_check = time.time()
                 self._check_updates()

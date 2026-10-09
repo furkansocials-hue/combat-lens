@@ -101,7 +101,8 @@ function renderTimers() {
   const rifts = riftTimes(TM.rift, tz, now, 4);
   // the parts that change only now and then are drawn once; the countdowns are updated in place below
   const seen = TM.live_seen && TM.live_seen[fac];
-  const key = JSON.stringify([LANG, fac, S.ui.region, tmEdit, rifts[0], seen && Math.floor(seen / 60000),
+  const alerts = TM.alerts || [];
+  const key = JSON.stringify([LANG, fac, S.ui.region, tmEdit, rifts[0], seen && Math.floor(seen / 60000), alerts,
     bosses.map(b => [b.code, b.st, b.due, b.cycle_min, b.live && b.live.at])]);
   if (box.dataset.key !== key) {
     box.dataset.key = key;
@@ -119,6 +120,7 @@ function renderTimers() {
       return `<div class="tb-row ${b.st}">
         <div class="tb-who"><div class="tb-n">${esc(b.name)}</div><div class="tb-s">${esc(b.zone)} · Lv ${b.level} · ${cyc}</div></div>
         <div class="tb-st">${status}</div>
+        <button class="ib${alerts.includes(b.code) ? ' on' : ''}" data-alert="${b.code}" title="${t('b_alert')}">${ic('bell')}</button>
         <button class="ib" data-kill="${b.code}" title="${t('b_killed_btn')}">${ic('skull')}</button>
         ${b.killed != null ? `<button class="ib" data-clear="${b.code}" title="${t('b_clear')}">${ic('x')}</button>` : '<span class="tb-gap"></span>'}
       </div>`;
@@ -148,6 +150,8 @@ function renderTimers() {
     box.querySelector('#tb-reg').onchange = e => act('settings', { values: { region: e.target.value } }).then(refresh);
     box.querySelectorAll('[data-kill]').forEach(el => el.onclick = () =>
       act('boss_kill', { code: +el.dataset.kill }).then(() => loadTimers(true)).then(renderTimers));
+    box.querySelectorAll('[data-alert]').forEach(el => el.onclick = () =>
+      act('boss_alert', { code: +el.dataset.alert, on: !el.classList.contains('on') }).then(() => loadTimers(true)).then(renderTimers));
     box.querySelectorAll('[data-clear]').forEach(el => el.onclick = () =>
       act('boss_clear', { code: +el.dataset.clear }).then(() => loadTimers(true)).then(renderTimers));
     box.querySelectorAll('[data-cyc]').forEach(el => el.onclick = () => { tmEdit = +el.dataset.cyc; renderTimers(); });

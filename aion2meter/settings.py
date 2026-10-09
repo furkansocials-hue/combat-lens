@@ -30,6 +30,7 @@ DEFAULTS = {
     "keep_fight": 300,       # seconds a finished fight stays on the panel (0: until the next one)
     "faction": "",           # Elyos / Asmodian: which field bosses the timers list shows
     "region": "eu",          # server region: the Spacetime Rift runs on its clock
+    "boss_alerts": [2101074, 2400800],  # field bosses announced before they spawn: both Gartuas (12 h)
 }
 
 
