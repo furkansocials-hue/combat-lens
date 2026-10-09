@@ -3,7 +3,7 @@
 
 const $ = id => document.getElementById(id);
 let S = null;            // last /api/state
-let tab = null;          // 'me' | 'party' (null until the server tells us) | 'apps': join requests
+let tab = null;          // 'me' | 'party' (null until the server tells us)
 let pin = null;          // encounter id being looked at (null: follow the newest)
 let screen = 'rows';     // rows | settings | timers | welcome (an update in progress covers them all)
 let updatedShown = false;
@@ -47,7 +47,7 @@ function init() {
     const b = e.target.closest('button[data-tab]');
     if (!b) return;
     tab = b.dataset.tab;
-    if (tab !== 'apps') act('settings', { values: { tab } });  // the app always opens on a damage tab
+    act('settings', { values: { tab } });
     render();
   });
   const togglePause = () => act('pause').then(refresh);
@@ -95,7 +95,7 @@ async function refresh() {
   if (polling) return;
   polling = true;
   try {
-    S = await api('state', { tab: tab === 'apps' ? 'party' : tab, pin });
+    S = await api('state', { tab, pin });
     applyScale(S.ui.scale);
     if (tab === null) tab = S.ui.tab;
     if (pin && S.nav && !S.nav.ids.includes(pin)) pin = null;
@@ -127,8 +127,6 @@ function render() {
   $('b-settings').classList.toggle('on', screen === 'settings');
   $('b-timers').classList.toggle('on', screen === 'timers');
   document.querySelectorAll('#tabs button').forEach(b => b.classList.toggle('on', b.dataset.tab === tab));
-  const waiting = (S.applicants || []).length;
-  html($('tab-apps'), t('tab_apps') + (waiting && tab !== 'apps' ? `<span class="badge num">${waiting}</span>` : ''));
   if (S.ui.just_updated && !updatedShown) { updatedShown = true; toast(t('updated_to', S.ui.just_updated)); }
   if (folded) return renderStrip();
 
@@ -141,17 +139,15 @@ function render() {
     return;
   }
 
-  const onApps = tab === 'apps';
   renderTarget(v);
-  if (onApps) $('target').classList.add('hidden');
   renderNotices(st);
   renderRiftNote();
   renderApps();
-  $('rows').classList.toggle('hidden', screen !== 'rows' || onApps);
+  $('rows').classList.toggle('hidden', screen !== 'rows');
   $('settings').classList.toggle('hidden', screen !== 'settings');
   $('timers').classList.toggle('hidden', screen !== 'timers');
   $('welcome').classList.toggle('hidden', screen !== 'welcome');
-  if (screen === 'rows' && !onApps) renderRows(st, v);
+  if (screen === 'rows') renderRows(st, v);
   else if (screen === 'settings') renderSettings();
   else if (screen === 'timers') renderTimers();
   else renderWelcome();
@@ -200,28 +196,21 @@ function renderNotices(st) {
   }
 }
 
-/* the Başvuru tab: people asking to join your listed party. The game shows them one at a time;
-   this lists them all, first come first, with what they bring. */
+/* people asking to join your listed party: the game shows them one at a time, this lists them all */
 function renderApps() {
   const list = (S && S.applicants) || [];
   const box = $('apps');
-  const show = screen === 'rows' && tab === 'apps';
+  const show = screen === 'rows' && list.length > 0;
   box.classList.toggle('hidden', !show);
   if (!show) { box.dataset.h = ''; return; }
-  const top = k => {  // the highest value gets marked, unless everyone has the same
-    const v = list.map(a => a[k] || 0), m = Math.max(...v);
-    return v.some(x => x !== m) ? m : -1;
-  };
-  const bestCp = top('combat_power'), bestGs = top('gear_score');
+  const best = list.length > 1 ? Math.max(...list.map(a => a.combat_power || 0)) : -1;
   const html = `<div class="ap-h">${ic('users')}<b>${t('apps', list.length)}</b><span class="sp"></span><span class="ap-hint">${t('apps_hint')}</span></div>` +
-    (list.length ? list.map((a, i) => `<div class="ap">
-      <span class="ap-i num">${i + 1}</span>${emblem(a.job, 24)}
+    list.map((a, i) => `<div class="ap">
+      <span class="ap-i num">${i + 1}</span>${emblem(a.job, 22)}
       <div class="ap-who"><div class="ap-n">${esc(a.name)}</div><div class="ap-s">${esc(cls(a.job).name)} · Lv ${a.level}</div></div>
-      <div class="ap-v"><div class="ap-cp num${a.combat_power === bestCp ? ' best' : ''}">${a.combat_power ? 'CP ' + fmtNum(a.combat_power) : ''}</div>
-        <div class="ap-gs num${a.gear_score === bestGs ? ' best' : ''}">${a.gear_score ? 'GS ' + fmtFull(a.gear_score) : ''}</div></div>
+      <div class="ap-cp num${a.combat_power === best ? ' best' : ''}">${a.combat_power ? 'CP ' + fmtNum(a.combat_power) : ''}</div>
       <div class="ap-w num" data-i="${i}"></div>
-      <button class="ib" data-dismiss="${a.id}" title="${t('apps_dismiss')}">${ic('x')}</button></div>`).join('')
-      : `<div class="ap-empty">${t('apps_empty')}</div>`);
+      <button class="ib" data-dismiss="${a.id}" title="${t('apps_dismiss')}">${ic('x')}</button></div>`).join('');
   if (box.dataset.h !== html) {
     box.dataset.h = html;
     box.innerHTML = html;
