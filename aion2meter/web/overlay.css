@@ -131,15 +131,15 @@ body { padding: 0; }
 .ap { display: flex; align-items: center; gap: 7px; padding: 5px 6px; margin-bottom: 4px; border-radius: 8px; background: rgba(255, 255, 255, .035); }
 .ap-empty { font-size: 11.5px; color: var(--text-3); padding: 10px 4px; line-height: 1.45; }
 .ap-v { text-align: right; flex: none; }
-.ap-cp { font-size: 10.5px; color: var(--text-2); }
-.ap-cp.best { color: #7ff0b4; }
+.ap-gs { font-size: 10.5px; color: var(--text-2); }
+.ap-gs.best { color: #7ff0b4; }
 #tabs .badge { display: inline-block; min-width: 15px; margin-left: 4px; padding: 0 4px; border-radius: 8px; background: #ff4d5e; color: #fff; font-size: 9.5px; font-weight: 800; line-height: 15px; text-align: center; }
 .ap-i { width: 14px; text-align: right; font-size: 10.5px; color: var(--text-3); flex: none; }
 .ap-who { flex: 1; min-width: 0; }
 .ap-n { font-weight: 700; font-size: 12px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
 .ap-s { font-size: 10px; color: var(--text-3); }
-.ap-gs { font-weight: 800; font-size: 12px; }
-.ap-gs.best { color: #7ff0b4; }
+.ap-cp { font-weight: 800; font-size: 12px; flex: none; }
+.ap-cp.best { color: #7ff0b4; }
 .ap-w { font-size: 10.5px; color: var(--text-3); width: 34px; text-align: right; flex: none; }
 .ap .ib { width: 20px; height: 20px; flex: none; }
 .ap .ib svg { width: 12px; height: 12px; }

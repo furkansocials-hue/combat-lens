@@ -217,8 +217,8 @@ function renderApps() {
     (list.length ? list.map((a, i) => `<div class="ap">
       <span class="ap-i num">${i + 1}</span>${emblem(a.job, 24)}
       <div class="ap-who"><div class="ap-n">${esc(a.name)}</div><div class="ap-s">${esc(cls(a.job).name)} · Lv ${a.level}</div></div>
-      <div class="ap-v"><div class="ap-gs num${a.gear_score === bestGs ? ' best' : ''}">${a.gear_score ? 'GS ' + fmtFull(a.gear_score) : ''}</div>
-        <div class="ap-cp num${a.combat_power === bestCp ? ' best' : ''}">${a.combat_power ? 'CP ' + fmtNum(a.combat_power) : ''}</div></div>
+      <div class="ap-v"><div class="ap-cp num${a.combat_power === bestCp ? ' best' : ''}">${a.combat_power ? 'CP ' + fmtNum(a.combat_power) : ''}</div>
+        <div class="ap-gs num${a.gear_score === bestGs ? ' best' : ''}">${a.gear_score ? 'GS ' + fmtFull(a.gear_score) : ''}</div></div>
       <div class="ap-w num" data-i="${i}"></div>
       <button class="ib" data-dismiss="${a.id}" title="${t('apps_dismiss')}">${ic('x')}</button></div>`).join('')
       : `<div class="ap-empty">${t('apps_empty')}</div>`);
