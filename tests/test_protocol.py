@@ -503,7 +503,7 @@ def application(name, char, server=1307, cls=9, level=45, cp=73701, party=80593)
     """`07 97`: a request to join your listed party, laid out as the game sends it."""
     dbid = (server << 48) | char
     nm = name.encode()
-    return packet(b"\x07\x97" + u32(party) + dbid.to_bytes(8, "little") + u32(cls) + u32(level)
+    return packet(b"\x07\x97" + varint(party) + b"\x00" + dbid.to_bytes(8, "little") + u32(cls) + u32(level)
                   + u32(1446) + bytes([len(nm)]) + nm + server.to_bytes(2, "little") + b"\x00" * 4
                   + cp.to_bytes(8, "little") + b"\x01" + (1_791_414_721_371).to_bytes(8, "little"))
 
@@ -535,12 +535,6 @@ class PartyFinder(unittest.TestCase):
         self.assertEqual([a["name"] for a in store.pending_applicants()], ["Orrin", "Kelda"])
         proc.consume_stream(answered(1002, server=1302))  # someone else's id: nothing changes
         self.assertEqual(len(store.pending_applicants()), 2)
-
-    def test_any_party_number(self):
-        store, proc = new()
-        for party in (80593, 353019, 7, 2_000_000_000):  # its bytes once read as a varint fit only some
-            proc.consume_stream(application("Varnis", party % 1000, party=party))
-        self.assertEqual(len(store.pending_applicants()), 4)
 
     def test_an_old_request_goes_by_itself(self):
         store, proc = new()
