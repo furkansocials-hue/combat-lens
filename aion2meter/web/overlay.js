@@ -142,7 +142,6 @@ function render() {
   renderTarget(v);
   renderNotices(st);
   renderRiftNote();
-  renderApps();
   $('rows').classList.toggle('hidden', screen !== 'rows');
   $('settings').classList.toggle('hidden', screen !== 'settings');
   $('timers').classList.toggle('hidden', screen !== 'timers');
@@ -194,29 +193,6 @@ function renderNotices(st) {
       b.onclick = () => act(b.dataset.op).then(refresh);
     });
   }
-}
-
-/* people asking to join your listed party: the game shows them one at a time, this lists them all */
-function renderApps() {
-  const list = (S && S.applicants) || [];
-  const box = $('apps');
-  const show = screen === 'rows' && list.length > 0;
-  box.classList.toggle('hidden', !show);
-  if (!show) { box.dataset.h = ''; return; }
-  const best = list.length > 1 ? Math.max(...list.map(a => a.combat_power || 0)) : -1;
-  const html = `<div class="ap-h">${ic('users')}<b>${t('apps', list.length)}</b><span class="sp"></span><span class="ap-hint">${t('apps_hint')}</span></div>` +
-    list.map((a, i) => `<div class="ap">
-      <span class="ap-i num">${i + 1}</span>${emblem(a.job, 22)}
-      <div class="ap-who"><div class="ap-n">${esc(a.name)}</div><div class="ap-s">${esc(cls(a.job).name)} · Lv ${a.level}</div></div>
-      <div class="ap-cp num${a.combat_power === best ? ' best' : ''}">${a.combat_power ? 'CP ' + fmtNum(a.combat_power) : ''}</div>
-      <div class="ap-w num" data-i="${i}"></div>
-      <button class="ib" data-dismiss="${a.id}" title="${t('apps_dismiss')}">${ic('x')}</button></div>`).join('');
-  if (box.dataset.h !== html) {
-    box.dataset.h = html;
-    box.innerHTML = html;
-    box.querySelectorAll('[data-dismiss]').forEach(b => b.onclick = () => act('applicant_dismiss', { id: b.dataset.dismiss }).then(refresh));
-  }
-  box.querySelectorAll('.ap-w').forEach(el => txt(el, dur(list[+el.dataset.i].waited_ms)));
 }
 
 function setEmpty(key, html) {

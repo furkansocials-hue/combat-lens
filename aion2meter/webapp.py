@@ -120,11 +120,6 @@ class WebApp:
             st.set_paused(bool(body.get("on", not st.paused)))
         elif op == "clear":
             st.clear_history()
-        elif op == "applicant_dismiss":
-            try:
-                st.note_application_closed(int(body.get("id", "")))
-            except ValueError:
-                pass
         elif op == "favorite":
             self.history.set_favorite(body.get("id"), body.get("on"))
         elif op == "delete":

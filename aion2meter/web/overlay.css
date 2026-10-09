@@ -124,20 +124,6 @@ body { padding: 0; }
 .tb-row.due { background: rgba(255, 181, 71, .12); box-shadow: inset 0 0 0 1px rgba(255, 181, 71, .35); }
 .tb-row.up { background: rgba(61, 220, 151, .08); }
 .tb-bar + .note { margin: 0 0 7px; }
-.apps { margin: 0 8px 6px; padding: 6px 6px 4px; border-radius: 10px; background: rgba(155, 107, 255, .08); border: 1px solid rgba(155, 107, 255, .25); flex: none; }
-.ap-h { display: flex; align-items: center; gap: 6px; font-size: 11.5px; color: #d6c6ff; padding: 0 2px 4px; }
-.ap-h svg { width: 14px; height: 14px; stroke: currentColor; fill: none; stroke-width: 2; }
-.ap-hint { font-size: 10px; color: var(--text-3); }
-.ap { display: flex; align-items: center; gap: 7px; padding: 3px 2px; border-top: 1px solid rgba(255, 255, 255, .05); }
-.ap-i { width: 14px; text-align: right; font-size: 10.5px; color: var(--text-3); flex: none; }
-.ap-who { flex: 1; min-width: 0; }
-.ap-n { font-weight: 700; font-size: 12px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
-.ap-s { font-size: 10px; color: var(--text-3); }
-.ap-cp { font-weight: 800; font-size: 12px; flex: none; }
-.ap-cp.best { color: #7ff0b4; }
-.ap-w { font-size: 10.5px; color: var(--text-3); width: 34px; text-align: right; flex: none; }
-.ap .ib { width: 20px; height: 20px; flex: none; }
-.ap .ib svg { width: 12px; height: 12px; }
 .tb-row.on { background: rgba(61, 220, 151, .13); box-shadow: inset 0 0 0 1px rgba(61, 220, 151, .3); }
 .tb-who { flex: 1; min-width: 0; }
 .tb-n { font-weight: 700; font-size: 12px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
