@@ -21,6 +21,9 @@ SIGNATURE_LOCK_THRESHOLD = 12
 SIGNATURE_WINDOW_MS = 3_000
 LOOPBACK_GRACE_MS = 2_500
 ACTIVE_SILENT_SWITCH_MS = 5_000
+# AION 2's game servers listen here. Other traffic can show the game's marks by chance (seen: a remote
+# desktop tool's local connection after a server change), so a flow on another port gives way to one here.
+GAME_PORTS = (13328,)
 FLOW_PRUNE_MS = 60_000
 MAX_ACC = 2 * 1024 * 1024
 # A segment lost on the way comes again when the server's TCP resends it, often after its 300 ms
@@ -46,6 +49,11 @@ def looks_like_tls(data):
 
 def has_signature(data):
     return any(s in data for s in SIGNATURES)
+
+
+def _on_game_port(key):
+    _, _, sport, _, dport = key
+    return sport in GAME_PORTS or dport in GAME_PORTS
 
 
 class Reassembler:
@@ -246,7 +254,7 @@ class Dispatcher:
     def _consider_lock(self, f, ts):
         from .capture import is_loopback
         a = self.flows.get(self.active) if self.active is not None else None
-        if a is not None:
+        if a is not None and not (_on_game_port(f.key) and not _on_game_port(a.key)):
             if ts - a.last_ts < ACTIVE_SILENT_SWITCH_MS:
                 return  # the locked flow is alive; this is a duplicate (relay) or a stray
             if is_loopback(a.device) and not is_loopback(f.device) and ts - a.last_ts < 15_000:

@@ -509,6 +509,51 @@ class Reassembly(unittest.TestCase):
         self.assertEqual(r.gaps, 0)
 
 
+class GameConnection(unittest.TestCase):
+    """Which captured flow is read as the game: the game's marks can turn up in other traffic too."""
+    LOCAL, SERVER, LAN = b"\x7f\x00\x00\x01", bytes([193, 202, 112, 95]), bytes([192, 168, 1, 2])
+    REMOTE_DESKTOP = ("Loopback Adapter", LOCAL, 5939, LOCAL, 50000)
+    GAME = ("Realtek PCIe 5GbE", SERVER, 13328, LAN, 50001)
+    RELAY = ("Loopback Adapter", LOCAL, 13328, LOCAL, 50002)  # a ping reducer handing the game over locally
+
+    def setUp(self):
+        from aion2meter.meter import Dispatcher
+        self.d = Dispatcher(Store(GD), GD, log=lambda *a: None)
+        self.seq = {}
+
+    def send(self, key, ts):
+        dev, src, sport, dst, dport = key
+        pay = b"\x05\x00\x0e\x00\x36"  # carries the game's record mark
+        seq = self.seq.get(key, 1)
+        self.d.handle(dev, ts, (src, sport, dst, dport, seq, 0x18, pay))
+        self.seq[key] = seq + len(pay)
+
+    def test_the_game_port_takes_over_from_a_stray_flow(self):
+        for i in range(20):
+            self.send(self.REMOTE_DESKTOP, i * 100)
+        self.assertEqual(self.d.active, self.REMOTE_DESKTOP)  # what happened after a server change
+        for i in range(20):
+            self.send(self.REMOTE_DESKTOP, 3000 + i * 100)
+            self.send(self.GAME, 3000 + i * 100)
+        self.assertEqual(self.d.active, self.GAME)
+
+    def test_a_live_game_flow_is_kept(self):
+        for i in range(20):
+            self.send(self.GAME, i * 100)
+        for i in range(20):
+            self.send(self.GAME, 5000 + i * 100)
+            self.send(self.REMOTE_DESKTOP, 5000 + i * 100)
+        self.assertEqual(self.d.active, self.GAME)
+
+    def test_a_local_relay_of_the_game_is_not_doubled_by_the_external_copy(self):
+        for i in range(20):
+            self.send(self.RELAY, i * 100)
+        for i in range(20):
+            self.send(self.RELAY, 3000 + i * 100)
+            self.send(self.GAME, 3000 + i * 100)
+        self.assertEqual(self.d.active, self.RELAY)
+
+
 class Varint(unittest.TestCase):
     def test_roundtrip(self):
         for v in (0, 1, 127, 128, 300, 16384, 2 ** 28 - 1, 99_999_999):
