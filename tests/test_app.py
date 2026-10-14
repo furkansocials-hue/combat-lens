@@ -170,6 +170,59 @@ class ApiTest(TempDirCase):
         self.assertEqual([i["start"] for i in items], sorted((i["start"] for i in items), reverse=True))
 
 
+class ReusedIdTest(TempDirCase):
+    """After a zone load the game hands ids out again: a summon whose spawn never came can get an id
+    that still carries a player from before."""
+
+    def party(self):
+        store, proc = new()
+        store.append_nickname_authoritative(5123, "Corin")
+        store.set_local_identity(5123, "Corin")
+        store.set_party_roster([("Corin", {"job": "SO"}), ("Mirae", {"job": "CL"})], True, 0)
+        return store, proc
+
+    def rows(self, store):
+        return {r["name"]: r["total"] for r in overlay_state(_App(store, History(self.dir)), "all", "party", None)["view"]["rows"]}
+
+    def test_an_old_name_on_the_id_does_not_take_the_summons_hits(self):
+        store, proc = self.party()
+        store.append_nickname_authoritative(6100, "Mirae")
+        store.append_nickname_authoritative(6000, "Velka")  # a Spiritmaster met in town
+        store.now = 0
+        proc.consume_stream(packet(damage_record(9001, 6000, 16010010, 500)))
+        store.now = 60_000  # in the dungeon id 6000 is Corin's spell now
+        for actor, skill in ((5123, 15010010), (6000, 15280010), (6100, 17010010)):
+            proc.consume_stream(packet(damage_record(9002, actor, skill, 1000)))
+        self.assertEqual(self.rows(store), {"Corin": 2000, "Mirae": 1000})
+
+    def test_your_id_keeping_an_old_class_still_shows_your_class_and_gets_your_spells(self):
+        store, proc = new()
+        store.append_nickname_authoritative(5123, "Brakka")  # a Gladiator had this id in an earlier zone
+        store.now = 0
+        proc.consume_stream(packet(damage_record(9001, 5123, 11020010, 500)))
+        store.append_nickname_authoritative(5123, "Corin")  # now the id is yours, a Sorcerer
+        store.set_local_identity(5123, "Corin")
+        store.set_party_roster([("Corin", {"job": "SO"}), ("Mirae", {"job": "CL"})], True, 0)
+        store.append_nickname_authoritative(6100, "Mirae")
+        store.note_summon_spawn(7001)  # your Bittercold Wind, its owner never sent
+        store.now = 60_000
+        for actor, skill in ((5123, 15010010), (7001, 15280010), (6100, 17010010)):
+            proc.consume_stream(packet(damage_record(9002, actor, skill, 1000)))
+        rows = {r["name"]: (r["job"], r["total"]) for r in overlay_state(_App(store, History(self.dir)), "all", "party", None)["view"]["rows"]}
+        self.assertEqual(rows, {"Corin": ("SO", 2000), "Mirae": ("CL", 1000)})
+
+    def test_an_old_id_of_a_party_member_does_not_take_the_summons_hits(self):
+        store, proc = self.party()
+        store.append_nickname_authoritative(6000, "Mirae")
+        store.now = 0
+        proc.consume_stream(packet(damage_record(9001, 6000, 17010010, 500)))
+        store.append_nickname_authoritative(6100, "Mirae")  # she is back under a new id
+        store.now = 60_000
+        for actor, skill in ((5123, 15010010), (6000, 15280010), (6100, 17010010)):
+            proc.consume_stream(packet(damage_record(9002, actor, skill, 1000)))
+        self.assertEqual(self.rows(store), {"Corin": 2000, "Mirae": 1000})
+
+
 class HealerTest(TempDirCase):
     def test_clerics_and_chanters_show_their_own_class_heals(self):
         store, proc = new()

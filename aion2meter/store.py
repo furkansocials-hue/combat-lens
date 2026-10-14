@@ -829,6 +829,36 @@ class Store:
     def _is_friendly(self, actor, target):
         return self.resolve(actor) in self.known_players and self.resolve(target) in self.known_players
 
+    def _forget_stale_id(self, actor, job):
+        """Entity ids are handed out again after a zone load, and a summon whose spawn never came can
+        get an id that still carries a player from an earlier zone, or a link to one. A player never
+        uses another class's skills: such a hit means the id, or its link, is old. Forget it, so the
+        hit goes to the summon's owner rather than to that player. Only for damage on mobs (buffs between
+        players can carry the caster's class on the receiver), never for you or your party's own ids."""
+        local_id, _ = self.local_identity()
+        if actor == local_id or self.nicknames.get(actor) in self.roster:
+            if self.actor_jobs.get(actor, job) != job:
+                self.actor_jobs[actor] = job  # your id or a party member's kept a class from an earlier zone
+            return
+        rid = self.resolve(actor)
+        if (self.actor_jobs.get(rid) or self.actor_jobs.get(actor, job)) == job:
+            return
+        if rid != actor:
+            self.summons.pop(actor, None)
+            self.aliases.pop(actor, None)
+            self.confirmed_summons.discard(actor)
+        if self.actor_jobs.get(actor, job) != job:
+            self.nicknames.pop(actor, None)
+            self.known_players.discard(actor)
+            self.authoritative.discard(actor)
+            self.spawn_named.discard(actor)
+            self.actor_jobs.pop(actor, None)
+            for s in [s for s, o in self.summons.items() if o == actor]:
+                del self.summons[s]
+            for a in [a for a, o in self.aliases.items() if o == actor]:
+                del self.aliases[a]
+        self.summon_spawns.add(actor)
+
     def _purge_friendly(self):
         cur = self.current
         if not cur:
@@ -867,9 +897,11 @@ class Store:
             if self._is_friendly(actor, target):
                 self._heal(actor, skill, damage + multi_damage, False)
                 return  # player-on-player: a heal or buff, not damage
+            job = job_from_skill(skill)
+            if job:
+                self._forget_stale_id(actor, job)
             if self.resolve(actor) in self.known_players:
                 self.hostile_targets.add(target)
-            job = job_from_skill(skill)
             if job:
                 self.actor_jobs.setdefault(actor, job)
 
@@ -1014,9 +1046,20 @@ class Store:
                     for code, _ in a.skills:
                         group_skills[k].add(code)
 
+            # A player's class is the class of the skills they used in this fight: an id can still
+            # carry the class of whoever had it in an earlier zone.
+            used = defaultdict(Counter)
+            for t in enc.targets.values():
+                for actor, a in t.actors.items():
+                    for (code, _), sk in a.skills.items():
+                        j = job_from_skill(code)
+                        if j:
+                            used[group_of[actor]][j] += sk.hits
             jobs = {}
             for k, rids in group_ids.items():
-                job = next((self.actor_jobs[r] for r in rids if r in self.actor_jobs), None)
+                job = used[k].most_common(1)[0][0] if used[k] else None
+                if job is None:
+                    job = next((self.actor_jobs[r] for r in rids if r in self.actor_jobs), None)
                 if job is None and k in self.roster:
                     job = self.roster[k].get("job")
                 if job is None:
