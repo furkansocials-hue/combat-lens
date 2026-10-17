@@ -26,8 +26,8 @@ def boss_list(world, entries):
     for n, up, ms, *extra in entries:
         body += bytes([1 if up else 0]) + varint(world * 100 + n)
         if up:
-            body += struct.pack("<fff", -57517.0, -85173.0, 10150.0) + bytes(extra)
-        body += ms.to_bytes(8, "little")
+            body += struct.pack("<fff", -57517.0, -85173.0, 10150.0)
+        body += bytes(extra) + ms.to_bytes(8, "little")
     return packet(bytes(body + b"\x00\x00"))
 
 
@@ -121,6 +121,17 @@ class GameListTest(unittest.TestCase):
             store.now = NOW + i * gap
             proc.consume_stream(boss_list(world, rows))
         return t
+
+    def test_one_more_byte_or_no_time_on_a_boss_keeps_the_rest_of_the_list(self):
+        rows = verteron()
+        rows[16] = (17, False, NOW + 7200_000, 0)  # one more byte before the time, as for Scholar Aulla
+        rows[2] = (3, False, 0)  # the list gives no time for this boss
+        t = self.lists(rows)
+        state = {b["code"]: b for b in t.state()["bosses"]}
+        codes = t.worlds[VERTERON]
+        self.assertEqual(state[codes[16]]["due"], NOW + 7200_000)
+        self.assertIsNone(state[codes[2]]["live"])
+        self.assertEqual(state[codes[0]]["due"], NOW + 3600_000)
 
     def test_the_parser_reads_the_list_spawned_bosses_and_all(self):
         store, proc = new()

@@ -118,6 +118,17 @@ def _epoch_ms_at(b, off):
     return v if 1_500_000_000_000 <= v <= 4_000_000_000_000 else None
 
 
+def _boss_time_at(b, off):
+    """(ok, ms) for a field boss list time at `off`: ms is None when the list gives no time (all zero
+    bytes, seen for a boss the game has no time for), ok is False when the bytes are no time at all."""
+    if off + 8 > len(b):
+        return False, None
+    if u64le(b, off) == 0:
+        return True, None
+    ms = _epoch_ms_at(b, off)
+    return ms is not None, ms
+
+
 def parse_field_boss_list(pkt):
     """The game's field boss list for one world, the one its map shows "Time Left" from.
 
@@ -125,7 +136,7 @@ def parse_field_boss_list(pkt):
               { <up> <spawn id varint> [<x y z floats> [<1 byte>]] <u64 epoch ms> } * count
 
     A spawn id is `world * 100 + n`. The time is when the boss came up while `up` is 1, and when it
-    comes back while it is 0. Returns (world, [(n, up, ms), ...]) or None.
+    comes back while it is 0; None when the list gives none. Returns (world, [(n, up, ms), ...]) or None.
     """
     _, o = read_varint(pkt, 0)
     if o <= 0 or len(pkt) < o + 9 or pkt[o] != 0x01 or pkt[o + 1] != 0x91 or pkt[o + 2] or pkt[o + 3]:
@@ -146,10 +157,11 @@ def parse_field_boss_list(pkt):
         off += 1 + n
         if up:
             off += 12
-            if _epoch_ms_at(pkt, off) is None:
-                off += 1  # some spawned bosses carry one more byte here
-        ms = _epoch_ms_at(pkt, off)
-        if ms is None:
+        ok, ms = _boss_time_at(pkt, off)
+        if not ok:
+            off += 1  # some bosses carry one more byte here
+            ok, ms = _boss_time_at(pkt, off)
+        if not ok:
             return None
         entries.append((sid % 100, up, ms))
         off += 8

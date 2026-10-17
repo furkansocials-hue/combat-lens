@@ -82,8 +82,8 @@ class BossTimers:
             prev_seen = self.live_seen.get(world, 0)
             changed = False
             for n, up, at in entries:
-                if not 1 <= n <= len(codes):
-                    continue
+                if not 1 <= n <= len(codes) or at is None:
+                    continue  # no time for this boss in the list: keep what is known
                 code = codes[n - 1]
                 old = self.live.get(code)
                 if old is None or old["up"] != up or old["at"] != at:
