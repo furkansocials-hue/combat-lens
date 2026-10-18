@@ -9,11 +9,13 @@ import hashlib
 import json
 import os
 import shutil
+import ssl
 import subprocess
 import sys
 import tempfile
 import threading
 import time
+import urllib.error
 import urllib.request
 import zipfile
 
@@ -24,6 +26,61 @@ STAGING = os.path.join(tempfile.gettempdir(), APP_ID + "-update")
 # Only these hosts serve release files; a feed pointing anywhere else is refused.
 _ALLOWED = ("https://github.com/", "https://objects.githubusercontent.com/",
             "https://release-assets.githubusercontent.com/")
+SUMS = "SHA256SUMS.txt"  # published with each release: lets the update be checked without GitHub's API
+CREATE_NO_WINDOW = 0x08000000
+
+
+def _curl():
+    path = os.path.join(os.environ.get("SystemRoot", r"C:\Windows"), "System32", "curl.exe")
+    return path if os.path.isfile(path) else None
+
+
+def _via_curl(url, timeout, accept=None, dest=None, effective_url=False):
+    """Windows' own curl: its certificate checks fetch a missing root the way the browser does,
+    where Python's own only sees the roots already on the PC."""
+    curl = _curl()
+    if curl is None:
+        raise RuntimeError("curl.exe yok")
+    cmd = [curl, "-sSfL", "--max-time", str(int(timeout)), "-A", APP_NAME]
+    if accept:
+        cmd += ["-H", f"Accept: {accept}"]
+    if dest:
+        cmd += ["-o", dest]
+    elif effective_url:
+        cmd += ["-o", "NUL", "-w", "%{url_effective}"]
+    r = subprocess.run(cmd + [url], capture_output=True, timeout=timeout + 15, creationflags=CREATE_NO_WINDOW)
+    if r.returncode != 0:
+        raise RuntimeError("curl: " + r.stderr.decode("utf-8", "replace").strip()[:200])
+    return r.stdout
+
+
+def _get(url, timeout, accept=None, effective_url=False):
+    """An https GET: Python first; a connection or certificate failure tries Windows' curl.
+    HTTP errors (a refusal from the server) are not retried. effective_url: the URL after redirects."""
+    req = urllib.request.Request(url, headers={"User-Agent": APP_NAME, **({"Accept": accept} if accept else {})})
+    try:
+        with urllib.request.urlopen(req, timeout=timeout) as r:
+            return r.geturl() if effective_url else r.read()
+    except urllib.error.HTTPError:
+        raise
+    except (urllib.error.URLError, ssl.SSLError, OSError) as first:
+        try:
+            out = _via_curl(url, timeout, accept=accept, effective_url=effective_url)
+        except Exception:
+            raise first
+        return out.decode("utf-8", "replace").strip() if effective_url else out
+
+
+def failure_reason(e):
+    """A short word for why GitHub could not be reached, for the panel."""
+    if isinstance(e, urllib.error.HTTPError):
+        return "limit" if e.code in (403, 429) else "http"
+    text = repr(e)
+    if "CERTIFICATE" in text or "SSL" in text:
+        return "ssl"
+    if "timed out" in text or "Timeout" in text:
+        return "timeout"
+    return "net"
 
 
 def version_tuple(v):
@@ -50,10 +107,13 @@ def latest_release(timeout=10):
         with open(feed, encoding="utf-8") as f:
             rel = json.load(f)
     else:
-        req = urllib.request.Request(f"https://api.github.com/repos/{GITHUB_REPO}/releases/latest",
-                                     headers={"User-Agent": APP_NAME, "Accept": "application/vnd.github+json"})
-        with urllib.request.urlopen(req, timeout=timeout) as r:
-            rel = json.loads(r.read())
+        try:
+            rel = json.loads(_get(f"https://api.github.com/repos/{GITHUB_REPO}/releases/latest", timeout,
+                                  accept="application/vnd.github+json"))
+        except urllib.error.HTTPError as e:
+            if e.code not in (403, 429):
+                raise
+            return _latest_from_site(timeout)  # the API's hourly limit is used up: read the release page
     tag = rel.get("tag_name") or ""
     return {
         "version": tag.lstrip("vV"),
@@ -61,6 +121,26 @@ def latest_release(timeout=10):
         "assets": {a["name"]: {"url": a["browser_download_url"], "size": a.get("size"), "digest": a.get("digest")}
                    for a in rel.get("assets", [])},
     }
+
+
+def _latest_from_site(timeout):
+    """The newest release without GitHub's API: the latest-release page redirects to its tag, and the
+    release's SHA256SUMS.txt names its files and their checksums."""
+    page = _get(f"https://github.com/{GITHUB_REPO}/releases/latest", timeout, effective_url=True)
+    tag = page.rstrip("/").rsplit("/", 1)[-1]
+    if "/releases/tag/" not in page or not tag:
+        raise RuntimeError("son sürüm bulunamadı")
+    base = f"https://github.com/{GITHUB_REPO}/releases/download/{tag}/"
+    assets = {}
+    try:
+        sums = _get(base + SUMS, timeout).decode("utf-8", "replace")
+    except Exception:
+        sums = ""  # an older release without it: shown, but not installed unchecked
+    for line in sums.splitlines():
+        parts = line.split()
+        if len(parts) == 2 and len(parts[0]) == 64:
+            assets[parts[1].lstrip("*")] = {"url": base + parts[1].lstrip("*"), "size": None, "digest": "sha256:" + parts[0]}
+    return {"version": tag.lstrip("vV"), "page": page, "assets": assets}
 
 
 def is_newer(info):
@@ -127,6 +207,28 @@ class Updater:
             self.state = dict(self.state, stage="error", error=str(e))
 
     def _download(self, url, path, size):
+        try:
+            return self._download_python(url, path, size)
+        except urllib.error.HTTPError:
+            raise
+        except (urllib.error.URLError, ssl.SSLError, OSError) as first:
+            if url.startswith("file:"):
+                raise
+            try:  # the certificate or connection failed for Python: Windows' curl, as for the check
+                _via_curl(url, 120, dest=path)
+            except Exception:
+                raise first
+            h = hashlib.sha256()
+            with open(path, "rb") as f:
+                for chunk in iter(lambda: f.read(1 << 20), b""):
+                    h.update(chunk)
+            done = os.path.getsize(path)
+            self.state.update(done=done, total=done, pct=100)
+            if size and done != size:
+                raise RuntimeError("indirme yarım kaldı")
+            return h.hexdigest()
+
+    def _download_python(self, url, path, size):
         h = hashlib.sha256()
         req = urllib.request.Request(url, headers={"User-Agent": APP_NAME})
         with urllib.request.urlopen(req, timeout=30) as r, open(path, "wb") as f:

@@ -38,6 +38,43 @@ class PickTest(unittest.TestCase):
             self.assertEqual(updater.relaunch_args(), ["--demo", "--tab", "me"])
 
 
+class ReachTest(unittest.TestCase):
+    def test_why_github_could_not_be_reached(self):
+        import ssl
+        import urllib.error
+        self.assertEqual(updater.failure_reason(urllib.error.HTTPError("u", 403, "rate", {}, None)), "limit")
+        self.assertEqual(updater.failure_reason(urllib.error.URLError(ssl.SSLCertVerificationError("CERTIFICATE_VERIFY_FAILED"))), "ssl")
+        self.assertEqual(updater.failure_reason(urllib.error.URLError(TimeoutError("timed out"))), "timeout")
+        self.assertEqual(updater.failure_reason(urllib.error.URLError(OSError("no route"))), "net")
+
+    def test_a_used_up_api_limit_reads_the_release_page_and_its_checksums(self):
+        import urllib.error
+        sums = (f"{'a' * 64}  CombatLens.exe\n{'b' * 64}  CombatLens-9.9.9.zip\n").encode()
+
+        def get(url, timeout, accept=None, effective_url=False):
+            if "api.github.com" in url:
+                raise urllib.error.HTTPError(url, 403, "rate limit", {}, None)
+            if effective_url:
+                return "https://github.com/x/y/releases/tag/v9.9.9"
+            return sums
+        with mock.patch.object(updater, "_get", get):
+            info = updater.latest_release()
+        self.assertEqual(info["version"], "9.9.9")
+        self.assertEqual(info["assets"]["CombatLens.exe"]["digest"], "sha256:" + "a" * 64)
+        self.assertTrue(info["assets"]["CombatLens-9.9.9.zip"]["url"].endswith("/releases/download/v9.9.9/CombatLens-9.9.9.zip"))
+
+    def test_a_certificate_failure_tries_windows_curl(self):
+        import ssl
+        import urllib.error
+
+        def refuse(*a, **k):
+            raise urllib.error.URLError(ssl.SSLCertVerificationError("CERTIFICATE_VERIFY_FAILED"))
+        with mock.patch.object(updater.urllib.request, "urlopen", refuse), \
+                mock.patch.object(updater, "_via_curl", return_value=b'{"tag_name": "v9.9.9"}') as curl:
+            self.assertEqual(updater._get("https://api.github.com/x", 5), b'{"tag_name": "v9.9.9"}')
+        curl.assert_called_once()
+
+
 class DownloadTest(unittest.TestCase):
     def setUp(self):
         self.dir = tempfile.mkdtemp(prefix="combatlens_upd_")

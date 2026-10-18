@@ -424,7 +424,7 @@ function renderSettings() {
   $('open-dir').onclick = () => act('open_folder');
   $('chk-upd').onclick = async () => {
     const r = await act('check_update');
-    if (!r.ok) toast(t('update_check_failed'));
+    if (!r.ok) toast(r.reason ? t('update_check_failed_why', t('upd_why_' + r.reason)) : t('update_check_failed'));
     else if (r.update) toast(t('update_avail', r.update.version) + (r.update.can_install ? '' : ' · ' + t('up_source')));
     else toast(t('up_to_date', r.version));
     refresh();

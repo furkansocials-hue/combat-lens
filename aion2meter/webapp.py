@@ -14,7 +14,7 @@ from .report import build_view
 from .server import NOT_FOUND, UIServer
 from .settings import Settings
 from .timers import BossTimers
-from .updater import Updater, is_newer, latest_release, pick_asset
+from .updater import Updater, failure_reason, is_newer, latest_release, pick_asset
 from .winutil import Hotkeys, round_corners, set_clickthrough
 
 STRIP_H = 38
@@ -39,6 +39,7 @@ class WebApp:
         # a demo or a replayed recording is shown, never added to your saved fights
         self.history = History(folder=tempfile.mkdtemp(prefix="combatlens_")) if label else History()
         self.update_info = None  # {version, url, can_install} when a newer release is out
+        self.update_error = None  # why the last check failed: ssl / timeout / limit / http / net
         self._release = None
         self.updater = Updater(log)
         self.just_updated = just_updated
@@ -168,7 +169,7 @@ class WebApp:
             self.timers.set_cycle(int(body.get("code", 0)), int(body.get("minutes", 0)))
         elif op == "check_update":
             ok = self._check_updates(force=True)
-            return {"ok": ok, "update": self.update_info, "version": __version__}
+            return {"ok": ok, "update": self.update_info, "version": __version__, "reason": self.update_error}
         elif op == "install_update":
             if self._release is None or not (self.update_info or {}).get("can_install"):
                 return {"error": "no update"}
@@ -516,7 +517,9 @@ class WebApp:
             info = latest_release()
         except Exception as e:
             self.log(f"güncelleme denetlenemedi: {e!r}")
+            self.update_error = failure_reason(e)
             return False
+        self.update_error = None
         if is_newer(info):
             self._release = info
             self.update_info = {"version": info["version"], "url": info["page"],
