@@ -312,6 +312,20 @@ class SettingsTest(TempDirCase):
         add_alert_sets(back)
         self.assertNotIn(2101131, back["boss_alerts"])
 
+    def test_the_asmodian_gartua_bell_goes_off_once(self):
+        from aion2meter.settings import add_alert_sets
+        path = os.path.join(self.dir, "s.json")
+        with open(path, "w", encoding="utf-8") as f:  # a settings file from 1.0.9: both Gartuas and the ten
+            json.dump({"boss_alerts": [2400800, 2101074, 2101131], "boss_alerts_v": 1}, f)
+        s = Settings(path)
+        add_alert_sets(s)
+        self.assertEqual(s["boss_alerts"], [2101074, 2101131])
+        s.update({"boss_alerts": s["boss_alerts"] + [2400800]})  # the player turns it on again
+        back = Settings(path)
+        add_alert_sets(back)
+        self.assertIn(2400800, back["boss_alerts"])
+        self.assertNotIn(2400800, Settings(os.path.join(self.dir, "new.json"))["boss_alerts"])  # a new install
+
 
 class UserFolderTest(TempDirCase):
     def test_the_folder_of_the_earlier_name_is_taken_over(self):

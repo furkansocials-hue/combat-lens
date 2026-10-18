@@ -30,26 +30,28 @@ DEFAULTS = {
     "keep_fight": 300,       # seconds a finished fight stays on the panel (0: until the next one)
     "faction": "",           # Elyos / Asmodian: which field bosses the timers list shows
     "region": "eu",          # server region: the Spacetime Rift runs on its clock
-    "boss_alerts": [2101074, 2400800],  # field bosses announced before they spawn: both Gartuas (12 h)
+    "boss_alerts": [2101074],  # field bosses announced before they spawn: the Elyos Gartua (12 h)
     "boss_alerts_v": 0,      # which of ALERT_SETS the saved bells already have
 }
 
 
-# Bells turned on for everyone once, set by set; a bell the player turns off again stays off.
+# Bells turned on and off for everyone once, set by set (on, off); a bell the player sets again stays so.
 ALERT_SETS = [
     # Elyos: Lagta, Setram, Dartan, Kashapa, Aullamu, K'nash, Ansas, Demiros, Kasia, Lawa
-    [2101131, 2101016, 2101120, 2101122, 2100989, 2100877, 2100718, 2100708, 2100661, 2100617],
+    ([2101131, 2101016, 2101120, 2101122, 2100989, 2100877, 2100718, 2100708, 2100661, 2100617], []),
+    # the Asmodian Gartua, on by default up to 1.0.9: we play Elyos
+    ([], [2400800]),
 ]
 
 
 def add_alert_sets(settings):
-    """Turn on the bells of the sets this player's settings have not had yet."""
+    """Apply the bell sets this player's settings have not had yet."""
     done = settings["boss_alerts_v"]
     if done >= len(ALERT_SETS):
         return
     codes = list(settings["boss_alerts"])
-    for s in ALERT_SETS[done:]:
-        codes += [c for c in s if c not in codes]
+    for on, off in ALERT_SETS[done:]:
+        codes = [c for c in codes if c not in off] + [c for c in on if c not in codes]
     settings.update({"boss_alerts": codes, "boss_alerts_v": len(ALERT_SETS)})
 
 
