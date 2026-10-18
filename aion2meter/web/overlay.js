@@ -306,6 +306,7 @@ function renderAlerts() {
   const list = S.alerts || [];
   const box = $('balerts');
   box.classList.toggle('hidden', !list.length || S.ui.folded);
+  box.classList.toggle('many', list.length > 1);  // several at once: thinner lines, the panel stays readable
   const key = JSON.stringify(list.map(a => [a.code, a.at, a.stage]));
   if (box.dataset.key !== key) {
     box.dataset.key = key;

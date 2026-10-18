@@ -296,6 +296,22 @@ class SettingsTest(TempDirCase):
         self.assertNotIn("nonsense", back.data)
         self.assertEqual(back["scale"], 0.9)  # a settings file from before the size setting gets the smaller size
 
+    def test_new_boss_bells_come_on_once_and_a_bell_turned_off_stays_off(self):
+        from aion2meter.settings import add_alert_sets
+        path = os.path.join(self.dir, "s.json")
+        with open(path, "w", encoding="utf-8") as f:
+            json.dump({"boss_alerts": [2101074, 2100050]}, f)  # a settings file from 1.0.8: Gartua and one more
+        s = Settings(path)
+        add_alert_sets(s)
+        self.assertEqual(s["boss_alerts"][:2], [2101074, 2100050])
+        self.assertIn(2101131, s["boss_alerts"])  # Lagta
+        self.assertIn(2100617, s["boss_alerts"])  # Lawa
+        self.assertNotIn(2400853, s["boss_alerts"])  # the Asmodian Lagta stays off
+        s.update({"boss_alerts": [c for c in s["boss_alerts"] if c != 2101131]})  # the player turns Lagta off
+        back = Settings(path)
+        add_alert_sets(back)
+        self.assertNotIn(2101131, back["boss_alerts"])
+
 
 class UserFolderTest(TempDirCase):
     def test_the_folder_of_the_earlier_name_is_taken_over(self):

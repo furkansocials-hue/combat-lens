@@ -12,7 +12,7 @@ from .history import History
 from .paths import APP_NAME, GITHUB_REPO, resource, user_dir, user_path
 from .report import build_view
 from .server import NOT_FOUND, UIServer
-from .settings import Settings
+from .settings import Settings, add_alert_sets
 from .timers import BossTimers
 from .updater import Updater, failure_reason, is_newer, latest_release, pick_asset
 from .winutil import Hotkeys, round_corners, set_clickthrough
@@ -36,6 +36,7 @@ class WebApp:
         self.npcap_ok = start_capture is None
         self.npcap_error = None
         self.settings = Settings()
+        add_alert_sets(self.settings)
         # a demo or a replayed recording is shown, never added to your saved fights
         self.history = History(folder=tempfile.mkdtemp(prefix="combatlens_")) if label else History()
         self.update_info = None  # {version, url, can_install} when a newer release is out

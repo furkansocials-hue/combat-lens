@@ -43,6 +43,9 @@ body { padding: 0; }
 
 /* notices */
 .balerts { display: flex; flex-direction: column; gap: 5px; margin: 0 8px 6px; flex: none; }
+.balerts.many .balert { padding: 5px 6px 5px 10px; font-size: 13px; gap: 8px; }
+.balerts.many .balert > svg { width: 17px; height: 17px; }
+.balerts.many .balert .ba-z { font-size: 10.5px; margin-top: 0; }
 /* a boss alert has to be seen over a fight: big, red and blinking (faster once the boss is due) */
 .balert { display: flex; align-items: center; gap: 10px; padding: 10px 8px 10px 12px; border-radius: 10px; color: #fff; font-size: 15px; font-weight: 800;
   background: #e5243b; border: 2px solid #ff8592; animation: balert 1s steps(1, end) infinite; }
