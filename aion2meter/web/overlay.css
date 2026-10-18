@@ -54,6 +54,12 @@ body { padding: 0; }
 .balert .grow { flex: 1; min-width: 0; }
 .balert .ba-z { font-size: 11.5px; font-weight: 700; opacity: .9; margin-top: 2px; }
 .balert .ib { color: #fff; }
+/* the next field boss, on the hourglass button: calm, in the panel's teal */
+.bnext { display: flex; align-items: center; gap: 10px; margin: 0 8px 6px; padding: 8px 6px 8px 12px; border-radius: 10px; flex: none;
+  font-size: 14px; font-weight: 800; color: var(--text); background: rgba(46, 230, 197, .12); border: 1px solid rgba(46, 230, 197, .5); }
+.bnext > svg { width: 20px; height: 20px; stroke: var(--accent-2); fill: none; stroke-width: 2.2; flex: none; }
+.bnext .grow { flex: 1; min-width: 0; }
+.bnext .bn-z { font-size: 11.5px; font-weight: 700; color: var(--text-2); margin-top: 2px; }
 @keyframes balert { 0% { background: #e5243b; box-shadow: 0 0 18px 3px rgba(255, 60, 80, .75); } 50% { background: #5c0f19; box-shadow: none; } }
 .strip.alerting { border-color: #ff4d5e; animation: balert 1s steps(1, end) infinite; }
 .strip.alerting #s-name { color: #fff; }

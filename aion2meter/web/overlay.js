@@ -10,6 +10,7 @@ let updatedShown = false;
 let langShown = null;
 let info = null;         // /api/settings (version, failed hotkeys)
 let welcomed = false;    // dismissed in this session (the saved flag may lag a poll behind)
+let nextUntil = 0;       // the next-boss line shows until then (the hourglass button)
 const rowEls = new Map();
 
 function hk(name) { return (S && S.ui.hotkeys[name]) || ''; }
@@ -20,6 +21,7 @@ function staticTexts() {
   $('b-reset').title = t('reset');
   $('b-analysis').title = t('analysis');
   $('b-settings').title = t('settings');
+  $('b-next').title = t('b_next');
   $('b-timers').title = t('timers');
   $('b-fold').title = t('fold');
   $('b-close').title = t('close');
@@ -35,6 +37,7 @@ function init() {
   $('b-reset').innerHTML = ic('reset');
   $('b-analysis').innerHTML = ic('chart');
   $('b-settings').innerHTML = ic('gear');
+  $('b-next').innerHTML = ic('hourglass');
   $('b-timers').innerHTML = ic('clock');
   $('b-fold').innerHTML = ic('minus');
   $('b-close').innerHTML = ic('x');
@@ -56,6 +59,10 @@ function init() {
   $('b-reset').onclick = () => { pin = null; act('reset').then(refresh); };
   $('b-analysis').onclick = () => act('analysis', { id: S && S.view ? S.view.id : '' });
   $('b-settings').onclick = () => { screen = screen === 'settings' ? 'rows' : 'settings'; if (screen === 'settings') loadInfo(); render(); };
+  $('b-next').onclick = () => {
+    if (nextUntil > Date.now()) { nextUntil = 0; render(); return; }
+    loadTimers(true).then(() => { nextUntil = Date.now() + NEXT_SHOW_MS; render(); });
+  };
   $('b-timers').onclick = () => { screen = screen === 'timers' ? 'rows' : 'timers'; loadTimers(true).then(render); };
   $('b-fold').onclick = () => act('fold', { on: true }).then(refresh);
   $('s-open').onclick = () => act('fold', { on: false }).then(refresh);
@@ -129,6 +136,7 @@ function render() {
   document.querySelectorAll('#tabs button').forEach(b => b.classList.toggle('on', b.dataset.tab === tab));
   if (S.ui.just_updated && !updatedShown) { updatedShown = true; toast(t('updated_to', S.ui.just_updated)); }
   renderAlerts();
+  renderNext();
   if (folded) return renderStrip();
 
   const updating = st.updating;
@@ -319,6 +327,38 @@ function renderAlerts() {
     });
   }
   box.querySelectorAll('.ba-t').forEach(el => txt(el, alertText(list[+el.dataset.i])));
+}
+
+/* the hourglass button: the field boss that comes back soonest (bosses spawning within the same minute
+   together), for a while under the header. Among the bosses with their bell on, when there are any: the
+   half-hour bosses would be next almost every time. */
+const NEXT_SHOW_MS = 20000;
+function nextBosses(now) {
+  const fac = tmFaction || S.ui.faction || 'Elyos';
+  const side = (TM ? TM.bosses : []).filter(b => b.faction === fac);
+  const belled = side.filter(b => (TM.alerts || []).includes(b.code));
+  const soon = (belled.length ? belled : side).filter(b => bossState(b, now) === 'cd').sort((a, b) => a.due - b.due);
+  return soon.filter(b => b.due - soon[0].due < 60000);
+}
+function renderNext() {
+  const box = $('bnext');
+  const now = Date.now(), show = nextUntil > now && !S.ui.folded;
+  box.classList.toggle('hidden', !show);
+  $('b-next').classList.toggle('on', show);
+  if (!show) return;
+  const list = nextBosses(now);
+  const key = LANG + JSON.stringify(list.map(b => [b.code, b.due]));
+  if (box.dataset.key !== key) {
+    box.dataset.key = key;
+    const where = list.length ? [...new Set(list.map(b => b.zone))].join(', ') + ' · ' + clockIn(list[0].due)
+      + (list[0].live ? ' · ' + t('b_game') : '') : '';
+    box.innerHTML = `${ic('hourglass')}<div class="grow"><div class="bn-t"></div>`
+      + (where ? `<div class="bn-z">${esc(where)}</div>` : '') + `</div><button class="ib" title="${t('close')}">${ic('x')}</button>`;
+    box.querySelector('button').onclick = () => { nextUntil = 0; render(); };
+  }
+  txt(box.querySelector('.bn-t'), list.length
+    ? t('next_boss', cycleText(Math.ceil((list[0].due - now) / 60000)), list.map(b => b.name).join(', '))
+    : t('b_open_map'));
 }
 
 function renderStrip() {
